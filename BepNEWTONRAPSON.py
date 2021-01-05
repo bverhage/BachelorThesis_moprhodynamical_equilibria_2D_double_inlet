@@ -33,8 +33,8 @@ if True:
     sigma=1.4*10**-4 #/s
     
     lamnda=sigma*Lx/(np.sqrt(g*H))
-    Nx=100+1#25#100
-    Ny=int((Nx-1)*1/4)+1
+    Nx=150+1#25#100
+    Ny=int((Nx-1)*1/2)+1
     
     dx=1/Nx
     
@@ -46,10 +46,33 @@ if True:
     
     fhat=7.1*10**-1
     
+    def deltafunc(x):
+        if  np.abs(x)<=1/(2*dx): return 1
+        else: return 0
+            
+    def bedfunction1(x,y,alpha,Q):
+        return np.sum(
+            list(
+                [deltafunc(x-Q[i][0])*np.exp(alpha*np.linalg.norm(np.array([x,y])-Q[i])**2) for i in range(Q.shape[0])]
+                )
+            )
+
+        
+    def bedfunction2(x,y):
+        
+        Q=np.array([np.array([x,0.5+0.3*np.sin(2*np.pi*x)]) for x in np.linspace(0,1,Nx)])
+        F=bedfunction1(x,y,-20,Q)
+        return F
+    
+    
     def bedprofile(x,y):
-         #if (x-0.5)**2<0.2**2 and (y-0.5)**2<0.2**2 : return 0.7
-         #else: return 0.3
-         return 0.9*x/Lx+0.01*(y/Ly-1)*y/Ly*x/Lx #1*np.sin(2*np.pi*((x/Lx-0.5/Lx)**2+0*(y/Ly-0.5/Ly)**2)*x/Lx)
+         # if x>0.1:
+         #     if (y-0.5)**2<0.4**2: return 0
+         #     else: return 0.7
+         # else: return 0
+         #return 0.95/(1+np.exp(-100*(x-0.2)))-bedfunction2(x,y)*(1-1/(1+np.exp(-100*(x-0.2))))
+         return 0.95/(1+np.exp(-100*(x-0.2)))-bedfunction2(x,y)*(1/(1+np.exp(-100*(x-0.2))))/(30)
+         #return #1*x+1*(y-1)*y*x 
     
     def func0(x,y):
         return 0
@@ -85,11 +108,19 @@ if True:
     
     WestBoundary = create(Nx,Ny,westboundary)
     
+    
+    
     ICzeta0 = create(Nx,Ny,func0)
     ICu0    = create(Nx,Ny,func0)
     ICv0    = create(Nx,Ny,func0)
     ICh0    = create(Nx,Ny,bedprofile)
     
+    Check=np.where(ICh0>1)
+    if Check[0].size>0 :
+        print('\n ------- \t  BED violates the model! \t ---------\n')
+    else:
+        print('\n Boundary checked commensing Newton Rapsons algorithem')
+
 if True:
    def LX(Nx,Ny,dx,dy,LeftNeuman=False,RightNeuman=False):
         
@@ -149,8 +180,18 @@ ONES= np.ones((Nx-1)*(Ny-1))
 
 h=ICh0
 
-Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0))
-    
+#ICzetas,ICzetac,ICus,ICuc,ICvs,ICvc=np.array_split(np.loadtxt('test1.txt', dtype=int),6) 
+
+
+
+
+if False:
+    if Nx==150+1 and Ny==150+1:
+            Uinnitalguess=np.loadtxt('data.csv',delimiter=',')
+
+else:
+    Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0))
+
 # #part 2 the Newton rapson method
 
 # # first we need to define some functions:
@@ -164,10 +205,10 @@ def MaxNormOfU(U):
 def F(U):
     zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
     
-    fzetas =-zetas-(1-h)*(LxND*uc+LyD*vc)+uc*(LxND*h)+vc*(LyD*h)
+    fzetas =-zetas-(1-h)*(LxND*uc+LyD*vc)+uc*(LxDN*h)+vc*(LyN*h)
       
     
-    fzetac =-zetac+(1-h)*(LxND*us+LyD*vs)-us*(LxND*h)-vs*(LyD*h)
+    fzetac =-zetac+(1-h)*(LxND*us+LyD*vs)-us*(LxDN*h)-vs*(LyN*h)
     
     #fzetac =+ -A*WestBoundary +A*(1-h)/(1-h*zetac)*WestBoundary/(2*dx)
     
@@ -191,18 +232,18 @@ def Jacobian(U):
      zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
      zeros=sp.csr_matrix(LxD.shape)
      
-     J11= -I                                     # zetas,zetas
-     J12= zeros                                  # zetas,zetac
-     J13= zeros                                  # zetas, us
-     J14= -LxND.multiply(1-h)+sp.diags(LxND*h)     # zetas, uc
-     J15= zeros                                  # zetas, vs
-     J16= -LyD.multiply(1-h)+sp.diags(LyD*h)     # zetas, vc
+     J11= -I                                      # zetas,zetas
+     J12= zeros                                   # zetas,zetac
+     J13= zeros                                   # zetas, us
+     J14= -LxND.multiply(1-h.T)+sp.diags(LxDN*h)     # zetas, uc
+     J15= zeros                                   # zetas, vs
+     J16= -LyD.multiply(1-h.T)+sp.diags(LyN*h)      # zetas, vc
      
      J21= zeros
      J22= -I
-     J23=  LxND.multiply(1-h)-sp.diags(LxND*h)
+     J23=  LxND.multiply(1-h.T)-sp.diags(LxDN*h)
      J24= zeros
-     J25=  LyD.multiply(1-h)-sp.diags(LyD*h)
+     J25=  LyD.multiply(1-h.T)-sp.diags(LyN*h)
      J26= zeros
      
      J31= -lamnda**(-2)*LxDN
@@ -213,7 +254,7 @@ def Jacobian(U):
      J36= I*fhat
      
      J41= zeros
-     J42= -lamnda**(-2)*LxDN+lamnda**(-2)*A*(sp.diags(WestBoundary))/(2*dx)
+     J42= -lamnda**(-2)*LxDN#+lamnda**(-2)*A*(sp.diags(WestBoundary))/(2*dx)
      J43= sp.diags(np.divide(r,1-h))
      J44= -I
      J45= -I*fhat
@@ -285,7 +326,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     
     i=0
     
-    DeltaU=la.spsolve(Jacobian(Uinnitalguess),F(Uiend))
+    DeltaU=la.spsolve(J,F(Uiend))
     
     print('\t Newton Rapson loop \n i=0 \t ||delta U|| = %f < %f ' %(MaxNormOfU(DeltaU),epsilon))
     
@@ -297,20 +338,20 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     
     while Stopcondition==1:
         
-         DeltaU=la.spsolve(Jacobian(Uinnitalguess),F(Uiend))
+         DeltaU=la.spsolve(J,F(Uiend))
          Uiend=Uiend-DeltaU
          i+=1
         
          if MaxNormOfU(DeltaU)>epsilon:
              Stopcondition=1
              print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f' %(i,MaxNormOfU(DeltaU),epsilon))
-         if MaxNormOfU(DeltaU)>100000*epsilon: # this is the fail save if the explodes.
+         if MaxNormOfU(DeltaU)>10**(20)*epsilon: # this is the fail save if the explodes.
              print('\n \t -----Divergence----- ')
              break 
          if MaxNormOfU(DeltaU)<=epsilon:
              Stopcondition=0
              print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f' %(i,MaxNormOfU(DeltaU),epsilon))    
-         if i>10:
+         if i>20:
             break
     
     return Uiend    
@@ -341,33 +382,33 @@ if True:
         
         plt.colorbar(imgzetas,orientation='horizontal',ax=ax1)
         
-        imgzetac = ax2.imshow(zetacarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
+        imgzetac = ax4.imshow(zetacarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
         
-        ax2.title.set_text('zeta-cos')
+        ax4.title.set_text('zeta-cos')
         plt.gca().invert_yaxis()
         
-        plt.colorbar(imgzetac,orientation='horizontal',ax=ax2)
+        plt.colorbar(imgzetac,orientation='horizontal',ax=ax4)
      
-        imgus = ax3.imshow(usarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
+        imgus = ax2.imshow(usarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
         
-        ax3.title.set_text('u-sin')
+        ax2.title.set_text('u-sin')
         plt.gca().invert_yaxis()
         
-        plt.colorbar(imgus,orientation='horizontal',ax=ax3)
+        plt.colorbar(imgus,orientation='horizontal',ax=ax2)
         
-        imguc = ax4.imshow(ucarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
+        imguc = ax5.imshow(ucarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
         
-        ax4.title.set_text('u-cos')
+        ax5.title.set_text('u-cos')
         plt.gca().invert_yaxis()
         
-        plt.colorbar(imguc,orientation='horizontal',ax=ax4)
+        plt.colorbar(imguc,orientation='horizontal',ax=ax5)
         
-        imgvs = ax5.imshow(vsarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
+        imgvs = ax3.imshow(vsarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
         
-        ax5.title.set_text('v-sin')
+        ax3.title.set_text('v-sin')
         plt.gca().invert_yaxis()
         
-        plt.colorbar(imgvs,orientation='horizontal',ax=ax5)
+        plt.colorbar(imgvs,orientation='horizontal',ax=ax3)
         
         imgvc = ax6.imshow(vcarr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
         
@@ -472,3 +513,70 @@ if True:
         # figure animation
         
         anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=False)
+  
+    
+if True:
+    t = 0
+    
+    plt.ion()
+        
+    fig, ((ax1, ax2)) = plt.subplots(2)
+    # Inital conditoin 
+    zeta0=zetas*np.sin(t)+zetac*np.cos(t)
+    u0=uc
+    v0=vc
+
+    # initialization of the movie figure
+    zeta0arr = np.reshape(zeta0,[Ny-1,Nx-1])
+    u0arr = np.reshape(u0,[Ny-1,Nx-1])
+    v0arr = np.reshape(v0,[Ny-1,Nx-1])
+        
+    X = np.linspace(0, 1, Nx-1)
+    Y = np.linspace(0, 1, Ny-1)
+    U, V =v0arr, u0arr
+    
+    imgzeta = ax1.imshow(zeta0arr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
+        
+    ax1.title.set_text('zeta')
+    plt.gca().invert_yaxis()
+    
+    plt.colorbar(imgzeta,orientation='horizontal',ax=ax1)
+    
+    ax2.quiver(X, Y, U, V, units='width')
+    #ax2.quiverkey(q, 0.1, 0.1, 0.01, r'$2 \frac{m}{s}$', labelpos='E',
+    #               coordinates='figure')
+    
+    tlt = plt.suptitle('t = %3.3f' %(t))
+        
+    Tend=1
+    NSteps=24*10
+    anim_dt=Tend/NSteps
+        
+    def animate(frame):
+        '''
+        This function updates the solution array
+        '''
+        global t, Nx, Ny
+        t = (frame+1)*anim_dt
+                        
+        zeta1=zetas*np.sin(2*np.pi*t)+zetac*np.cos(2*np.pi*t)
+        u1=us*np.sin(2*np.pi*t)+uc*np.cos(2*np.pi*t)
+        v1=vs*np.sin(2*np.pi*t)+vc*np.cos(2*np.pi*t)
+            
+                
+        imgzeta.set_array(np.reshape(zeta1,[Ny-1,Nx-1]))
+        imgzeta.set_clim(zeta1.min(),zeta1.max())
+        
+        ax2.clear()
+        ax2.quiver(X, Y, np.reshape(u1,[Ny-1,Nx-1]), np.reshape(v1,[Ny-1,Nx-1]),np.reshape(np.sqrt(u1**2+v1**2),[Ny-1,Nx-1]),pivot='mid',units='dots',headwidth=0.1,linewidth=0.1,headlength=0.1)
+        #ax2.quiverkey(q, 0.1, 0.1, 0.01)
+            
+        tlt.set_text('t = %3.3f' %(t))
+      
+                                                
+        return imgzeta,ax2
+        
+        # figure animation
+        
+    anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
+    
