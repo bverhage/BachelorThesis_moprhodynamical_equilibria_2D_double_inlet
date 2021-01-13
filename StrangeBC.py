@@ -274,8 +274,8 @@ if True:
                     f_u  =  fhat*vStart                                                          # coriolis
                     f_u += -NU*LxDN.dot(zetaStart) + NU/(2*dx)*BoundaryForcing*f(tStart,i)   # surface 
                     f_u += -uStart*FRICITON                                                     # bed friciton
-                    f_u+=-uStart*LxND.dot(uStart)+BoundaryForcing*fprime(tStart,i)**2/(1-0+f(tStart,i))**2
-                    f_u+=-vStart*LyD.dot(uStart)+BoundaryForcing*fprime(tStart,i)/(1-0+f(tStart,i))*vStart
+                    f_u+=  -uStart*LxND.dot(uStart)+BoundaryForcing*fprime(tStart,i)**2/(1-0+f(tStart,i))**2
+                    f_u+=  -vStart*LyD.dot(uStart)+BoundaryForcing*fprime(tStart,i)/(1-0+f(tStart,i))*vStart
                     
                     uEnd = uStart-ht*f_u
                     

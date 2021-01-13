@@ -22,11 +22,12 @@ if True:
     plt.close("all")
     
 if True:
-    Lx=100*10**3 #m
+    Lx=10*10**3 #m
     Ly=1*10**3 #m
     H=10#m
     
     A=1/H 
+    
     g=9.81 #m/s^2
     
     CD=0.001
@@ -56,7 +57,6 @@ if True:
                 [deltafunc(x-Q[i][0])*np.exp(alpha*np.linalg.norm(np.array([x,y])-Q[i])**2) for i in range(Q.shape[0])]
                 )
             )
-
 
         
     def bedfunction2(x,y):
@@ -123,6 +123,37 @@ if True:
         print('\n Boundary checked commensing Newton Rapsons algorithem')
 
 if True:
+    
+   def FDLaplacian2D(Nx,Ny,dx,dy,WestNeuman=False,NorthNeuman=False,EastNeuman=False,SouthNeuman=False):
+        
+        #diagonalsx = [-1*np.ones((1,Nx-1-1)),np.zeros((1,Nx-1)),np.ones((1,Nx-1-1))]
+        #diagonalsy = [-1*np.ones((1,Ny-1-1)),np.zeros((1,Ny-1)),np.ones((1,Ny-1-1))]
+        diagonalsx = [-1*np.ones((1,Nx)),np.ones((1,Nx-1))]
+        diagonalsy = [-1*np.ones((1,Ny)),np.ones((1,Ny-1))]
+        
+        if WestNeuman==True:
+            #diagonalsx[1][0][0]=-1;
+            diagonalsx[1][0][0]=0;
+        if EastNeuman==True:
+            #diagonalsx[1][0][-1]=1;
+            diagonalsx[0][0][-2]=0;
+        if NorthNeuman==True:
+            #diagonalsy[1][0][0]=-1;
+            diagonalsy[1][0][0]=0;
+        if SouthNeuman==True:
+            #diagonalsy[1][0][-1]=1;
+            diagonalsy[0][0][-2]=0;
+            
+        
+        Dx =1/(dx)*sp.diags(diagonalsx, [-1, 0], shape=(Nx,Nx-1))
+        Dy =1/(dy)*sp.diags(diagonalsy, [-1, 0], shape=(Ny,Ny-1))
+        
+        LXX=Dx.transpose().dot(Dx)
+        LYY=Dy.transpose().dot(Dy)
+
+        Ans = sp.kron(LYY,sp.eye(Nx-1))+sp.kron(sp.eye(Ny-1),LXX)    
+        return Ans
+
    def LX(Nx,Ny,dx,dy,LeftNeuman=False,RightNeuman=False):
         
         diagonalsx = [-1*np.ones((1,Nx-1-1)),np.zeros((1,Nx-1)),np.ones((1,Nx-1-1))]
@@ -175,6 +206,9 @@ LyND = LY(Nx,Ny,dx,dy,True)
 LyDN = LY(Nx,Ny,dx,dy,False,True)
 LyN  = LY(Nx,Ny,dx,dy,True,True)
 
+ADDDD = FDLaplacian2D(Nx,Ny,dx,dy)
+ADNNN = FDLaplacian2D(Nx,Ny,dx,dy,False,True,True,True)
+
 I = sp.eye((Nx-1)*(Ny-1))
 
 ONES= np.ones((Nx-1)*(Ny-1))
@@ -201,18 +235,15 @@ def MaxNormOfU(U):
      ''' The max 2 norm of U=(u,v)^T w'''
      zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
      return np.max([np.linalg.norm(zetas),np.linalg.norm(zetac),np.linalg.norm(us),np.linalg.norm(uc),np.linalg.norm(vs),np.linalg.norm(vc)])
-
-
+ 
 def F(U):
     zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
     
     fzetas =-zetas-(1-h)*(LxND*uc+LyD*vc)+uc*(LxDN*h)+vc*(LyN*h)
-      
+
     
     fzetac =-zetac+(1-h)*(LxND*us+LyD*vs)-us*(LxDN*h)-vs*(LyN*h)
-    
-    #fzetac =+ -A*WestBoundary +A*(1-h)/(1-h*zetac)*WestBoundary/(2*dx)
-    
+    fzetac =+ (1-h)*WestBoundary*A/2
   
     fus    =-us+fhat*vc+np.divide(r, 1-h)*uc-lamnda**(-2)*LxDN*zetas
     
@@ -236,13 +267,13 @@ def Jacobian(U):
      J11= -I                                      # zetas,zetas
      J12= zeros                                   # zetas,zetac
      J13= zeros                                   # zetas, us
-     J14= -LxND.multiply(1-h.T)+sp.diags(LxDN*h)     # zetas, uc
+     J14= -LxND.multiply(1-h.T)+sp.diags(LxDN*h)#+sp.diags(-1/(2*dx)*WestBoundary*-(1-h)/(1+h))     # zetas, uc
      J15= zeros                                   # zetas, vs
      J16= -LyD.multiply(1-h.T)+sp.diags(LyN*h)      # zetas, vc
      
      J21= zeros
      J22= -I
-     J23=  LxND.multiply(1-h.T)-sp.diags(LxDN*h)
+     J23=  LxND.multiply(1-h.T)-sp.diags(LxDN*h)#-sp.diags(-1/(2*dx)*WestBoundary*-(1-h)/(1+h))
      J24= zeros
      J25=  LyD.multiply(1-h.T)-sp.diags(LyN*h)
      J26= zeros
@@ -284,10 +315,69 @@ def Jacobian(U):
                 [J61, J62, J63, J64, J65, J66]
                 ],format='csr')
      return J
+ 
+J=Jacobian(Uinnitalguess) 
+
+def F2(U):
+    zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+
+    zeros=np.zeros(zetas.shape)
+    
+    ans=J*U+np.concatenate((zeros,(1-h)*WestBoundary*A/2,zeros,lamnda**(-2)*A*WestBoundary/(2*dx),zeros,zeros))
+    return ans
+
+
+
+Mu=1.8*10**(-3)
+epsilon = 0.15
+def FConcentration0(C0):
+    Cs,Cc=np.array_split(C0,2)
+    
+
+    
+    fCs = -Cs+Mu*ADNNN*Cc-Cc
+    fCc = -Cc-Mu*ADNNN*Cs+Cs
+    
+    return np.concatenate((fCs,fCc))
+
+
+def JacobianConcentration0():
+    J11=-I
+    J12=Mu*ADNNN-I
+    
+    J21= -Mu*ADNNN+I
+    J22= -I
+    J=sp.bmat([
+            [J11,J12],
+            [J21,J22] 
+        ],format='csr')
+    return J
+
+def FConcentration1(C1,C0,U0):
+    C2s,C2c = np.array_split(C1,2)
+    Cs,Cc   =  np.array_split(C0,2)
+    zetas,zetac,us,uc,vs,vc=np.array_split(U0,6)
+    
+    
+    fC2s = -2*C2s
+    fC2s =+ 1/2*uc*LxDN*Cs+1/2*Cs*LxND*uc+1/2*us*LxDN*Cc+1/2*Cc*LxND*us
+    fC2s =+ 1/2*vc*LyN*Cs +1/2*Cs*LyD*vc +1/2*vs*LyN*Cc +1/2*Cc*LyD*vs
+    fC2s =+ Mu*ADNNN*C2c
+    fC2s =+ 1/epsilon*us*uc-C2c
+    
+    fC2c = -2*C2c
+    fC2c =+ 1/2*uc*LxDN*Cc+1/2*Cc*LxND*uc+1/2*us*LxDN*Cs+1/2*Cs*LxND*us
+    fC2c =+ 1/2*vc*LyN*Cc +1/2*Cc*LyD*vc +1/2*vs*LyN*Cs +1/2*Cs*LyD*vs
+    fC2c =+ Mu*ADNNN*C2s
+    fC2s =+ 1/epsilon*(1/2*us*us+1/2*uc*uc)-C2s
+    
+    fC2c=-fC2c
+    return np.concatenate((fC2s,fC2c))
+
 
 # def residual(U,U1,ht):
 #     return U-U1+ht*F(U1)
-J=Jacobian(Uinnitalguess) 
+
 
 # def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
 #     Uiend=np.copy(Uinnitalguess)
@@ -321,13 +411,13 @@ J=Jacobian(Uinnitalguess)
 #     return Uiend
 
 def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
-    epsilon=1/Lx
+    epsilon=1
     
     Uiend=np.copy(Uinnitalguess)
     
     i=0
     
-    DeltaU=la.spsolve(J,F(Uiend))
+    DeltaU=la.spsolve(J,F2(Uiend))
     
     print('\t Newton Rapson loop \n i=0 \t ||delta U|| = %f < %f ' %(MaxNormOfU(DeltaU),epsilon))
     
@@ -339,7 +429,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     
     while Stopcondition==1:
         
-         DeltaU=la.spsolve(J,F(Uiend))
+         DeltaU=la.spsolve(J,F2(Uiend))
          Uiend=Uiend-DeltaU
          i+=1
         
@@ -352,14 +442,70 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
          if MaxNormOfU(DeltaU)<=epsilon:
              Stopcondition=0
              print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f' %(i,MaxNormOfU(DeltaU),epsilon))    
-         if i>20:
+         if i>10:
             break
     
     return Uiend    
-     
-zetas,zetac,us,uc,vs,vc=np.array_split(NewtonRapsonInnerloop(Uinnitalguess),6)
 
-if True:
+def NRConcentration(Ufinal:'np.ndarray',C0innitialguess:'np.ndarray',C1innitialguess:'np.ndarray'):
+    epsilon_1=1#10**(-10)
+    C0iend=np.copy(C0innitialguess)
+    C1iend=np.copy(C1innitialguess)
+    
+    i=0
+    
+    DeltaC0=la.spsolve(JacobianConcentration0(),FConcentration0(C0iend))
+    DeltaC1=la.spsolve(JacobianConcentration0(),FConcentration1(C1iend,C0iend,Ufinal))
+    
+    print('\t Newton Rapson loop \n i=0 \t ||delta C^0|| = %f , ||delta C^1|| = %f ' %(MaxNormOfU(DeltaC0),MaxNormOfU(DeltaC1)))
+    
+    if max(MaxNormOfU(DeltaC0),MaxNormOfU(DeltaC1))>epsilon_1:
+        Stopcondition=1
+    else:
+        Stopcondition=0
+        C0iend=C0iend-DeltaC0
+        C1iend=C1iend-DeltaC1
+        
+    while Stopcondition==1:
+        
+         DeltaC0=la.spsolve(JacobianConcentration0(),FConcentration0(C0iend))
+         DeltaC1=la.spsolve(JacobianConcentration0(),FConcentration1(C1iend,C0iend,Ufinal))
+         C0iend=C0iend-DeltaC0
+         C1iend=C1iend-DeltaC1
+         
+         i+=1
+        
+         if max(MaxNormOfU(DeltaC0),MaxNormOfU(DeltaC1))>epsilon_1:
+             Stopcondition=1
+             print('\t Newton Rapson loop \n i=0 \t ||delta C^0|| = %f , ||delta C^1|| = %f  ' %(MaxNormOfU(DeltaC0),MaxNormOfU(DeltaC1)))
+         if max(MaxNormOfU(DeltaC0),MaxNormOfU(DeltaC1))>10**(20)*epsilon_1: # this is the fail save if the explodes.
+             print('\n \t -----Divergence----- ')
+             break 
+         if max(MaxNormOfU(DeltaC0),MaxNormOfU(DeltaC1))<=epsilon_1:
+             Stopcondition=0
+             print('\t Newton Rapson loop \n i=0 \t ||delta C^0|| = %f , ||delta C^1|| = %f  ' %(MaxNormOfU(DeltaC0),MaxNormOfU(DeltaC1)))
+         if i>10:
+            break
+    
+    return C0iend,C1iend
+     
+
+# the run
+    
+Ufinal=NewtonRapsonInnerloop(Uinnitalguess)
+zetas,zetac,us,uc,vs,vc=np.array_split(Ufinal,6)
+
+#checks
+
+C0,C1=NRConcentration(Ufinal,np.concatenate((ICzeta0,ICzeta0)),np.concatenate((ICzeta0,ICzeta0)))
+
+Cs,Cc=np.array_split(C0,2)
+
+C2s,C2c=np.array_split(C1,2)
+
+#the plots
+
+def staticplots():
         plt.ion()
         
         fig, ((ax1, ax2, ax3),(ax4, ax5, ax6)) = plt.subplots(2, 3)
@@ -419,7 +565,7 @@ if True:
         plt.colorbar(imgvc,orientation='horizontal',ax=ax6)
 
 
-if True:
+def Animation1():
         t = 0
     
         plt.ion()
@@ -516,7 +662,7 @@ if True:
         anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=False)
   
     
-if True:
+def Animation2():
     t = 0
     
     plt.ion()
@@ -581,3 +727,55 @@ if True:
         
     anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
     
+def Animation3():
+    t = 0
+    
+    plt.ion()
+        
+    fig, ((ax1)) = plt.subplots(1)
+    # Inital conditoin 
+
+    # initialization of the movie figure
+    C_anim=0*Cs+1*Cc+0*C2s+1*C2c
+    
+    Carr = np.reshape( C_anim,[Ny-1,Nx-1])
+    
+    imgC = ax1.imshow(Carr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
+        
+    ax1.title.set_text('Concentration')
+    plt.gca().invert_yaxis()
+    
+    plt.colorbar(imgC,orientation='horizontal',ax=ax1)
+    
+
+    tlt = plt.suptitle('t = %3.3f' %(t))
+        
+    Tend=1
+    NSteps=24*10
+    anim_dt=Tend/NSteps
+        
+    def animate(frame):
+        '''
+        This function updates the solution array
+        '''
+        global t, Nx, Ny
+        t = (frame+1)*anim_dt
+                        
+        C_anim1=np.sin(t)*Cs+np.cos(t)*Cc+np.sin(2*t)*C2s+np.cos(2*t)*C2c
+            
+                
+        imgC.set_array(np.reshape(C_anim1,[Ny-1,Nx-1]))
+        imgC.set_clim(C_anim1.min(),C_anim1.max())
+        
+        
+            
+        tlt.set_text('t = %3.3f' %(t))
+      
+                                                
+        return imgC
+        
+        # figure animation
+        
+    anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
+
+Animation2()
