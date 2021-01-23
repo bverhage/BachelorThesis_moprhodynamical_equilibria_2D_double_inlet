@@ -22,18 +22,23 @@ if True:
     plt.close("all")
     
 if True:
-    Lx=10*10**3 #m
+    Lx=59*10**3 #m
     Ly=1*10**3 #m
-    H=10#m
+    H1=12#m
+    H2=10
     
-    A=1/H 
+    A=0.74*1/H1
+    
+    Atilde=0.84*1/H1
+    
+    phi=41/180*np.pi
     
     g=9.81 #m/s^2
     
-    CD=0.001
+    CD=0.0025
     sigma=1.4*10**-4 #/s
     
-    lamnda=sigma*Lx/(np.sqrt(g*H))
+    lamnda=sigma*Lx/(np.sqrt(g*H1))
     Nx=100+1#25#100
     Ny=int((Nx-1)*1/2)+1
     
@@ -41,11 +46,19 @@ if True:
     
     dy=1/Ny
     
-    r=(8*CD*A*Lx)/(3*np.pi*H**2)
+    r=(8*CD*A*Lx)/(3*np.pi*H1**2)
     #r=-0.025
     # beta=0.08
     
     fhat=7.1*10**-1
+    
+    Mu=1.8*10**(-3)
+    Mutilde=10**(-6)
+    epsilon = 0.15
+    
+    BOOL_concentration= True
+    BOOL_bedevolution= False
+    BOOL_two_open_ends= True
     
     def deltafunc(x):
         if  np.abs(x)<=1/(2*dx): return 1
@@ -72,8 +85,8 @@ if True:
          #     else: return 0.7
          # else: return 0
          #return 0.95/(1+np.exp(-100*(x-0.2)))-bedfunction2(x,y)*(1-1/(1+np.exp(-100*(x-0.2))))
-         return 0.8/(1+np.exp(-100*(x-0.2)))-bedfunction2(x,y)*(1/(1+np.exp(-100*(x-0.2))))/(30)
-         #return #1*x+1*(y-1)*y*x 
+         #return 0.8/(1+np.exp(-100*(x-0.2)))-bedfunction2(x,y)*(1/(1+np.exp(-100*(x-0.2))))/(30)
+         return (1-H2/H1)*x
     
     def func0(x,y):
         return 0
@@ -85,13 +98,13 @@ if True:
         else: return 0
         
     def northboundary(x,y):
-        if y==Ly-dy: return 1
+        if y==1-dy: return 1
 
         else: return 0
         
     
     def eastboundary(x,y):
-        if x==Lx-dx: return 1
+        if x==1-dx: return 1
         return 0
     
     def southboundary(x,y):
@@ -108,7 +121,9 @@ if True:
         return Fvec
     
     WestBoundary = create(Nx,Ny,westboundary)
-    
+    EastBoundary = create(Nx,Ny,eastboundary)
+    NorthBoundary = create(Nx,Ny,northboundary)
+    SouthBoundary = create(Nx,Ny,southboundary)
     
     
     ICzeta0 = create(Nx,Ny,func0)
@@ -197,9 +212,13 @@ if True:
 # 2D FD Laplacian and identity matrices
 
 LxD  =  LX(Nx,Ny,dx,dy)
+#LxD  =  LX(Nx,Ny,dx,dy,True,False) #WRONG
+ 
 LxND =  LX(Nx,Ny,dx,dy,True)
 LxDN =  LX(Nx,Ny,dx,dy,False,True)
 LxN  =  LX(Nx,Ny,dx,dy,True,True)
+
+#LxN  =  LX(Nx,Ny,dx,dy,False,True) #WRONG
 
 LyD  = LY(Nx,Ny,dx,dy)
 LyND = LY(Nx,Ny,dx,dy,True)
@@ -208,12 +227,15 @@ LyN  = LY(Nx,Ny,dx,dy,True,True)
 
 ADDDD = FDLaplacian2D(Nx,Ny,dx,dy)
 ADNNN = FDLaplacian2D(Nx,Ny,dx,dy,False,True,True,True)
+ADNDN = FDLaplacian2D(Nx,Ny,dx,dy,False,True,False,True)
+#ADNDN = FDLaplacian2D(Nx,Ny,dx,dy,True,True,False,True) #wrong
+
+ANDDD = FDLaplacian2D(Nx,Ny,dx,dy,True,False,False,False)
+
 
 I = sp.eye((Nx-1)*(Ny-1))
 
 ONES= np.ones((Nx-1)*(Ny-1))
-
-h=ICh0
 
 #ICzetas,ICzetac,ICus,ICuc,ICvs,ICvc=np.array_split(np.loadtxt('test1.txt', dtype=int),6) 
 
@@ -225,7 +247,7 @@ if False:
             Uinnitalguess=np.loadtxt('data.csv',delimiter=',')
 
 else:
-    Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0))
+    Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0,ICv0,ICh0))
 
 # #part 2 the Newton rapson method
 
@@ -233,119 +255,321 @@ else:
     
 def MaxNormOfU(U):
      ''' The max 2 norm of U=(u,v)^T w'''
-     zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
      return np.max([np.linalg.norm(zetas),np.linalg.norm(zetac),np.linalg.norm(us),np.linalg.norm(uc),np.linalg.norm(vs),np.linalg.norm(vc)])
  
 def F(U):
-    zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
     
-    fzetas =-zetas-(1-h)*(LxND*uc+LyD*vc)+uc*(LxDN*h)+vc*(LyN*h)
+    
+    if BOOL_two_open_ends:
+     Lx_zeta= LxD
+     Lx_u   = LxN
+     A_h    = ADNDN
+    else:
+     Lx_zeta= LxDN
+     Lx_u   = LxND
+     A_h    = ADNNN
+    
+    # -------------- zetas ------------------
+    fzetas =-zetas-(1-h)*(Lx_u*uc+LyD*vc)+uc*(Lx_zeta*h)+vc*(LyN*h)
+    
+    #fzetas =+ uc*(1-H2/H1)*EastBoundary/(2*dx)
+    
+    #fzetas =+ -(1-h)*EastBoundary*H1/H2*Atilde*np.sin(phi)/2
+    
+    # -------------- zetac ------------------
+    fzetac =-zetac+(1-h)*(Lx_u*us+LyD*vs)-us*(Lx_zeta*h)-vs*(LyN*h)
+    
+    #fzetac =+ -us*(1-H2/H1)*EastBoundary/(2*dx)
+    
+    #fzetac =+ (1-h)*WestBoundary*A/2
+    
+    #fzetac =+ (1-h)*EastBoundary*H1/H2*Atilde*np.cos(phi)/2
+    
+    # -------------- us ------------------
+    fus    = -us +fhat*vc-np.divide(r, 1-h)*uc-lamnda**(-2)*Lx_zeta*zetas
+    
+    #fus    =+ -lamnda**(-2)*Atilde*np.cos(phi)*EastBoundary/(2*dx)
+    
+    # -------------- uc ------------------
+    fuc    = -uc -fhat*vs+np.divide(r, 1-h)*us+lamnda**(-2)*Lx_zeta*zetac
+    
+    #fuc    =+  -lamnda**(-2)*A*WestBoundary/(2*dx)
+    
+    #fuc    =+  lamnda**(-2)*Atilde*np.sin(phi)*EastBoundary/(2*dx)
+    
+    # -------------- vs ------------------
+    fvs    =-vs-fhat*uc-np.divide(r, 1-h)*vc-lamnda**(-2)*LyN*zetas
+    
+    # -------------- vc ------------------
+    fvc    =-vc+fhat*us   +np.divide(r, 1-h)*vs+lamnda**(-2)*LyN*zetac
+    
+    # -------------- C ------------------
+    
+    fC     = -epsilon*C  +epsilon*Mu*A_h*C  
+    if BOOL_concentration:
+        fC=+(us*us+vs*vs+uc*uc+vc*vc)
+    
+    # -------------- h ------------------
+    fh     =  -Mutilde*A_h*h
+    #fh     =+ Mutilde*EastBoundary*(1-H2/H1)/(2*dx)
+    if BOOL_bedevolution:
+        fh     =+ -Mu*A_h*C
+       
+    ans=np.concatenate((fzetas,fzetac,fus,fuc,fvs,fvc,fC,fh))
+    zeros=np.zeros(zetas.shape)
+    ans=+ np.concatenate((
+        zeros,
+        +(1-h)*WestBoundary*(A/2),
+        zeros,
+        -lamnda**(-2)*A*WestBoundary/(2*dx),
+        zeros,
+        zeros,
+        zeros,
+        zeros
+        ))
+    if BOOL_two_open_ends:
+        ans=+ np.concatenate((
+            #zetas
+            #+lamnda**(-2)*Atilde*np.cos(phi)*EastBoundary/(2*dx)*(1-H2/H1)*EastBoundary/(2*dx)
+            
+            -(1-h)*EastBoundary*(-Atilde*np.sin(phi)*H1/H2/2 ),#+uc*(1-H2/H1)*EastBoundary/(2*dx),
+            
+            #zetac
+            #-us*(1-H2/H1)*EastBoundary*H/(2*dx)
+            
+            +(1-h)*EastBoundary*( Atilde*np.cos(phi)*H1/H2/2 ),#-us*(1-H2/H1)*EastBoundary/(2*dx),
+            #us
+            -lamnda**(-2)*Atilde*np.sin(phi)*EastBoundary/(2*dx),
+            #uc
+            +lamnda**(-2)*Atilde*np.cos(phi)*EastBoundary/(2*dx),
+            #vc
+            zeros,
+            #vs
+            zeros,
+            #C
+            zeros,
+            #h
+            Mutilde*EastBoundary*(1-H2/H1)/(2*dx)
+            ))
 
-    
-    fzetac =-zetac+(1-h)*(LxND*us+LyD*vs)-us*(LxDN*h)-vs*(LyN*h)
-    fzetac =+ (1-h)*WestBoundary*A/2
-  
-    fus    =-us+fhat*vc+np.divide(r, 1-h)*uc-lamnda**(-2)*LxDN*zetas
-    
-    fuc    =-uc-fhat*vs+np.divide(r, 1-h)*us-lamnda**(-2)*LxDN*zetac
-    fuc    =+ lamnda**(-2)*A*WestBoundary/(2*dx)
-    
-    fvs    =-vs-fhat*uc+np.divide(r, 1-h)*vc-lamnda**(-2)*LyN*zetas
-    fvc    =-vc+fhat*us+np.divide(r, 1-h)*vs-lamnda**(-2)*LyN*zetac
-    
-    return np.concatenate((fzetas,fzetac,fus,fuc,fvs,fvc))
-
-
+    return ans
 
 
 
 
 def Jacobian(U):
-     zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
      zeros=sp.csr_matrix(LxD.shape)
      
-     J11= -I                                      # zetas,zetas
-     J12= zeros                                   # zetas,zetac
-     J13= zeros                                   # zetas, us
-     J14= -LxND.multiply(1-h.T)+sp.diags(LxDN*h)#+sp.diags(-1/(2*dx)*WestBoundary*-(1-h)/(1+h))     # zetas, uc
-     J15= zeros                                   # zetas, vs
-     J16= -LyD.multiply(1-h.T)+sp.diags(LyN*h)      # zetas, vc
+     if BOOL_two_open_ends:
+      Lx_zeta= LxD
+      Lx_u   = LxN
+      A_h    = ADNDN
+     else:
+      Lx_zeta= LxDN
+      Lx_u   = LxND
+      A_h    = ADNNN
+     
+     J11 = -I                                      # zetas,zetas
+     J12 = zeros                                   # zetas,zetac
+     J13 = zeros                                   # zetas, us
+     J14 = -Lx_u.multiply(1-h.T)+sp.diags(Lx_zeta*h)#+sp.diags((1-h)*EastBoundary*-Lx_zeta*h)     # zetas, uc
+     J15 = zeros                                   # zetas, vs
+     J16 = -LyD.multiply(1-h.T)+sp.diags(LyN*h)      # zetas, vc
+     J17 = zeros                                    # zetas, C
+     J18 = sp.diags(Lx_u*uc+LyD*vc)+Lx_zeta.multiply(uc)+LyN.multiply(vc) #zetas, h
      
      J21= zeros
      J22= -I
-     J23=  LxND.multiply(1-h.T)-sp.diags(LxDN*h)#-sp.diags(-1/(2*dx)*WestBoundary*-(1-h)/(1+h))
+     J23=  Lx_u.multiply(1-h.T)-sp.diags(Lx_zeta*h)#-sp.diags((1-h)*WestBoundary*-Lx_zeta*h)#-sp.diags(-1/(2*dx)*WestBoundary*-(1-h)/(1+h))
      J24= zeros
      J25=  LyD.multiply(1-h.T)-sp.diags(LyN*h)
      J26= zeros
+     J27 = zeros
+     J28 = -sp.diags(Lx_u*us+LyD*vs)-Lx_zeta.multiply(us)-LyN.multiply(vs)
      
-     J31= -lamnda**(-2)*LxDN
-     J32= zeros
-     J33= -I
-     J34= sp.diags(np.divide(r,1-h))
-     J35= zeros
-     J36= I*fhat
+     J31 = -lamnda**(-2)*Lx_zeta
+     J32 = zeros
+     J33 = -I
+     J34 = -sp.diags(np.divide(r,1-h))
+     J35 = zeros
+     J36 = I*fhat
+     J37 = zeros
+     J38 = -sp.diags(r*(1-h)**(-2)*uc)
      
      J41= zeros
-     J42= -lamnda**(-2)*LxDN#+lamnda**(-2)*A*(sp.diags(WestBoundary))/(2*dx)
+     J42= lamnda**(-2)*Lx_zeta
      J43= sp.diags(np.divide(r,1-h))
      J44= -I
      J45= -I*fhat
-     J46= zeros
+     J46=  zeros
+     J47 = zeros
+     J48 = sp.diags(r*(1-h)**(-2)*us)
           
-     J51= -lamnda**(-2)*LyN
-     J52= zeros
-     J53= zeros
-     J54= I*fhat
-     J55= -I
-     J56= sp.diags(np.divide(r,1-h))
+     J51 = -lamnda**(-2)*LyN
+     J52 = zeros
+     J53 = zeros
+     J54 = -I*fhat
+     J55 = -I
+     J56 = -sp.diags(np.divide(r,1-h))
+     J57 = zeros
+     J58 = -sp.diags(r*(1-h)**(-2)*vc)
      
      J61= zeros
-     J62= -lamnda**(-2)*LyN
-     J63= -I*fhat
+     J62= lamnda**(-2)*LyN
+     J63= I*fhat
      J64= zeros
      J65= sp.diags(np.divide(r,1-h))
      J66= -I
+     J67 = zeros
+     J68 = sp.diags(r*(1-h)**(-2)*vs)
+     
+     J71 = zeros
+     J72 = zeros
+     J73 = 2*sp.diags(us)
+     J74 = 2*sp.diags(uc)
+     J75 = 2*sp.diags(vs)
+     J76 = 2*sp.diags(vc)
+     J77 = -epsilon*I+epsilon*Mu*A_h
+     J78 = zeros
+     
+     J81 = zeros
+     J82 = zeros
+     J83 = zeros
+     J84 = zeros
+     J85 = zeros
+     J86 = zeros
+     J87 =-Mu*A_h
+     J88 =-Mutilde*A_h
+     
+     
+     
+     if  not BOOL_bedevolution: 
+         J87= zeros
+         J78= zeros
+         J68= zeros
+         J48= zeros
+         J38= zeros
+         J28= zeros
+         J18= zeros
+         
+     
+     
+     if not BOOL_concentration:
+
+         J73 = zeros
+         J74 = zeros
+         J75 = zeros
+         J76 = zeros
+         
+     J11 = J11
+     J12 = J12
+     J13 = J13    
+     J14 = J14 + sp.diags(-WestBoundary*-Lx_zeta*h)
+     J15 = J15
+     J16 = J16 + LyD.multiply(-(1-h)*WestBoundary)+ sp.diags(-EastBoundary*-LyN*h)
+         
+     if BOOL_two_open_ends:
+         #-(1-h)*EastBoundary/2*(-Atilde*np.sin(phi)*H1/H2-LyD*vc  +uc*Lx_zeta*h*H1/H2  +vc*LyN*h*H1/H2)
+         J11 = J11                                              #zetas, zetas
+         J12 = J12                                              #zetas, zetac
+         J13 = J13                                              #zetas, us
+         J14 = J14 + sp.diags(+(1-H2/H1)*EastBoundary/(2*dx))        #zetas, uc
+         J15 = J15                                              #zetas, vs
+         J16 = J16 -0*LyD.multiply(-(1-h)*EastBoundary)+ 0*sp.diags(-(1-h)*EastBoundary*LyN*h*H1/H2) #zetas, vc
+         
+        #(1-h)*EastBoundary/2*( Atilde*np.cos(phi)*H1/H2 -LyD*vs  +us*Lx_zeta*h*H1/H2   +vs*LyN*h*H1/H2)
+         J21 = J21                                                          #zetac, zetas
+         J22 = J22                                                          #zetac, zetac
+         J23 = J23 + sp.diags(-(1-H2/H1)*EastBoundary/(2*dx))               #zetac, us
+         J24 = J24                                                          #zetac, uc
+         J25 = J25 - 0*LyD.multiply((1-h)*EastBoundary/2)+ 0*sp.diags((1-h)*EastBoundary/2*LyN*h*H1/H2)             #zetac, vs
+         J26 = J26                                                          #zetac, vu
+         
+        
+         
      
      J=sp.bmat([
-                [J11, J12, J13, J14, J15, J16],
-                [J21, J22, J23, J24, J25, J26],
-                [J31, J32, J33, J34, J35, J36],
-                [J41, J42, J43, J44, J45, J46],
-                [J51, J52, J53, J54, J55, J56],
-                [J61, J62, J63, J64, J65, J66]
+                [J11, J12, J13, J14, J15, J16, J17, J18],
+                [J21, J22, J23, J24, J25, J26, J27, J28],
+                [J31, J32, J33, J34, J35, J36, J37, J38],
+                [J41, J42, J43, J44, J45, J46, J47, J48],
+                [J51, J52, J53, J54, J55, J56, J57, J58],
+                [J61, J62, J63, J64, J65, J66, J67, J68],
+                [J71, J72, J73, J74, J75, J76, J77, J78],
+                [J81, J82, J83, J84, J85, J86, J87, J88]
                 ],format='csr')
      return J
  
 J=Jacobian(Uinnitalguess) 
 
 def F2(U):
-    zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
 
     zeros=np.zeros(zetas.shape)
     
-    ans=J*U+np.concatenate((zeros,(1-h)*WestBoundary*A/2,zeros,lamnda**(-2)*A*WestBoundary/(2*dx),zeros,zeros))
+    ans=Jacobian(Uinnitalguess)*U
+
+    ans=+ np.concatenate((
+        zeros,
+        +(1-h)*WestBoundary*(A/2),
+        zeros,
+        -lamnda**(-2)*A*WestBoundary/(2*dx),
+        zeros,
+        zeros,
+        zeros,
+        zeros
+        ))
+    if BOOL_two_open_ends:
+        ans=+ np.concatenate((
+            #zetas
+            #+lamnda**(-2)*Atilde*np.cos(phi)*EastBoundary/(2*dx)*(1-H2/H1)*EastBoundary/(2*dx)
+            
+            -(1-h)*EastBoundary*(-Atilde*np.sin(phi)*H1/H2/2 ),
+            
+            #zetac
+            #-us*(1-H2/H1)*EastBoundary*H/(2*dx)
+            
+            +(1-h)*EastBoundary*( Atilde*np.cos(phi)*H1/H2/2 ),
+            #us
+            -lamnda**(-2)*Atilde*np.sin(phi)*EastBoundary/(2*dx),
+            #uc
+            +lamnda**(-2)*Atilde*np.cos(phi)*EastBoundary/(2*dx),
+            #vc
+            zeros,
+            #vs
+            zeros,
+            #C
+            zeros,
+            #h
+            Mutilde*EastBoundary*(1-H2/H1)/(2*dx)
+            ))
+    if BOOL_bedevolution and BOOL_two_open_ends: 
+        ans=+ np.concatenate((zeros,zeros,zeros,zeros,zeros,zeros,zeros,Mutilde*EastBoundary*(1-H2/H1)/(2*dx)))
+
     return ans
 
 
 
-Mu=1.8*10**(-3)
-epsilon = 0.15
+
 def FConcentration0(C0):
     Cs,Cc=np.array_split(C0,2)
     
 
     
-    fCs = -Cs+Mu*ADNNN*Cc-Cc
-    fCc = -Cc-Mu*ADNNN*Cs+Cs
+    fCs = -Cs+Mu*ADNDN*Cc-Cc
+    fCc = -Cc-Mu*ADNDN*Cs+Cs
     
     return np.concatenate((fCs,fCc))
 
 
 def JacobianConcentration0():
     J11=-I
-    J12=Mu*ADNNN-I
+    J12=Mu*ADNDN-I
     
-    J21= -Mu*ADNNN+I
+    J21= -Mu*ADNDN+I
     J22= -I
     J=sp.bmat([
             [J11,J12],
@@ -362,13 +586,13 @@ def FConcentration1(C1,C0,U0):
     fC2s = -2*C2s
     fC2s =+ 1/2*uc*LxDN*Cs+1/2*Cs*LxND*uc+1/2*us*LxDN*Cc+1/2*Cc*LxND*us
     fC2s =+ 1/2*vc*LyN*Cs +1/2*Cs*LyD*vc +1/2*vs*LyN*Cc +1/2*Cc*LyD*vs
-    fC2s =+ Mu*ADNNN*C2c
+    fC2s =+ Mu*ADNDN*C2c
     fC2s =+ 1/epsilon*us*uc-C2c
     
     fC2c = -2*C2c
     fC2c =+ 1/2*uc*LxDN*Cc+1/2*Cc*LxND*uc+1/2*us*LxDN*Cs+1/2*Cs*LxND*us
     fC2c =+ 1/2*vc*LyN*Cc +1/2*Cc*LyD*vc +1/2*vs*LyN*Cs +1/2*Cs*LyD*vs
-    fC2c =+ Mu*ADNNN*C2s
+    fC2c =+ Mu*ADNDN*C2s
     fC2s =+ 1/epsilon*(1/2*us*us+1/2*uc*uc)-C2s
     
     fC2c=-fC2c
@@ -411,38 +635,50 @@ def FConcentration1(C1,C0,U0):
 #     return Uiend
 
 def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
-    epsilon=1
+    epsilon=.1
     
     Uiend=np.copy(Uinnitalguess)
     
     i=0
     
-    DeltaU=la.spsolve(J,F2(Uiend))
-    
-    print('\t Newton Rapson loop \n i=0 \t ||delta U|| = %f < %f ' %(MaxNormOfU(DeltaU),epsilon))
+    DeltaU=la.spsolve(Jacobian(Uiend),F(Uiend))
+    Uiend=Uiend-DeltaU
+    # fig, ((ax1,ax2,ax3,ax4),(ax5,ax6,ax7,ax8)) = plt.subplots(2,4)
+    # deltazetas,deltazetac,deltaus,deltauc,deltavs,deltavc,deltaC,deltah=np.array_split(DeltaU,8)
+    # ax1.imshow(np.reshape(deltazetas,[Ny-1,Nx-1]))
+    # ax2.imshow(np.reshape(deltazetac,[Ny-1,Nx-1]))
+    # ax3.imshow(np.reshape(deltaus,[Ny-1,Nx-1]))
+    # ax4.imshow(np.reshape(deltauc,[Ny-1,Nx-1]))
+    # ax5.imshow(np.reshape(deltavs,[Ny-1,Nx-1]))
+    # ax6.imshow(np.reshape(deltavc,[Ny-1,Nx-1]))
+    # ax7.imshow(np.reshape(deltaC,[Ny-1,Nx-1]))
+    # ax8.imshow(np.reshape(deltah,[Ny-1,Nx-1]))
+    print('\t Newton Rapson loop \n i=0 \t ||delta U|| = %f < %f \n ' %(MaxNormOfU(DeltaU),epsilon))
     
     if MaxNormOfU(DeltaU)>epsilon:
         Stopcondition=1
+        
     else:
         Stopcondition=0
-        Uiend=Uiend-DeltaU
+        
     
     while Stopcondition==1:
-        
-         DeltaU=la.spsolve(J,F2(Uiend))
-         Uiend=Uiend-DeltaU
+         
+         DeltaU=la.spsolve(Jacobian(Uiend),F(Uiend))
+         
          i+=1
-        
-         if MaxNormOfU(DeltaU)>epsilon:
-             Stopcondition=1
-             print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f' %(i,MaxNormOfU(DeltaU),epsilon))
-         if MaxNormOfU(DeltaU)>10**(20)*epsilon: # this is the fail save if the explodes.
-             print('\n \t -----Divergence----- ')
+         if MaxNormOfU(DeltaU)>10**(6)*epsilon: # this is the fail save if the explodes.
+             print('\n \t -----Divergence----- \n')
              break 
+         if MaxNormOfU(DeltaU)>epsilon:
+             Uiend=Uiend-DeltaU
+             Stopcondition=1
+             print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f\n' %(i,MaxNormOfU(DeltaU),epsilon))
+
          if MaxNormOfU(DeltaU)<=epsilon:
              Stopcondition=0
-             print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f' %(i,MaxNormOfU(DeltaU),epsilon))    
-         if i>10:
+             print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f\n' %(i,MaxNormOfU(DeltaU),epsilon))    
+         if i>2:
             break
     
     return Uiend    
@@ -493,15 +729,15 @@ def NRConcentration(Ufinal:'np.ndarray',C0innitialguess:'np.ndarray',C1innitialg
 # the run
     
 Ufinal=NewtonRapsonInnerloop(Uinnitalguess)
-zetas,zetac,us,uc,vs,vc=np.array_split(Ufinal,6)
+zetas,zetac,us,uc,vs,vc,C,h=np.array_split(Ufinal,8)
 
 #checks
 
-C0,C1=NRConcentration(Ufinal,np.concatenate((ICzeta0,ICzeta0)),np.concatenate((ICzeta0,ICzeta0)))
+#C0,C1=NRConcentration(Ufinal,np.concatenate((ICzeta0,ICzeta0)),np.concatenate((ICzeta0,ICzeta0)))
 
-Cs,Cc=np.array_split(C0,2)
+#Cs,Cc=np.array_split(C0,2)
 
-C2s,C2c=np.array_split(C1,2)
+#C2s,C2c=np.array_split(C1,2)
 
 #the plots
 
@@ -659,7 +895,7 @@ def Animation1():
         
         # figure animation
         
-        anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=False)
+        return animation.FuncAnimation(fig , animate  , interval=50 , repeat=False)
   
     
 def Animation2():
@@ -725,9 +961,10 @@ def Animation2():
         
         # figure animation
         
-    anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
+    return animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
     
 def Animation3():
+    
     t = 0
     
     plt.ion()
@@ -736,9 +973,9 @@ def Animation3():
     # Inital conditoin 
 
     # initialization of the movie figure
-    C_anim=0*Cs+1*Cc+0*C2s+1*C2c
     
-    Carr = np.reshape( C_anim,[Ny-1,Nx-1])
+    
+    Carr = np.reshape( C,[Ny-1,Nx-1])
     
     imgC = ax1.imshow(Carr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
         
@@ -761,7 +998,7 @@ def Animation3():
         global t, Nx, Ny
         t = (frame+1)*anim_dt
                         
-        C_anim1=np.sin(t)*Cs+np.cos(t)*Cc+np.sin(2*t)*C2s+np.cos(2*t)*C2c
+        C_anim1=C
             
                 
         imgC.set_array(np.reshape(C_anim1,[Ny-1,Nx-1]))
@@ -777,5 +1014,15 @@ def Animation3():
         # figure animation
         
     anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
-
+staticplots()
+plt.figure()
 Animation2()
+plt.figure()
+plt.imshow(np.reshape(h,[Ny-1,Nx-1]))
+plt.figure()
+plt.imshow(np.reshape(C,[Ny-1,Nx-1]))
+plt.show()
+
+Check=np.where(1-h+zetas<0)
+if Check[0].size>0 :
+    print('\n ------- \t  NON physical model! \t ---------\n')

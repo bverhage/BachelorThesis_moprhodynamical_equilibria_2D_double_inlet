@@ -212,7 +212,7 @@ def F(U):
     fzetac =-zetac+(1-h)*(LxND*us+LyD*vs)-us*(LxDN*h)-vs*(LyN*h)
     
     #fzetac =+ -A*WestBoundary +A*(1-h)/(1-h*zetac)*WestBoundary/(2*dx)
-    
+    fzetac =+ (1-h)*WestBoundary*A/2
   
     fus    =-us+fhat*vc+np.divide(r, 1-h)*uc-lamnda**(-2)*LxDN*zetas
     
@@ -255,7 +255,7 @@ def Jacobian(U):
      J36= I*fhat
      
      J41= zeros
-     J42= -lamnda**(-2)*LxDN#+lamnda**(-2)*A*(sp.diags(WestBoundary))/(2*dx)
+     J42= -lamnda**(-2)*LxDN
      J43= sp.diags(np.divide(r,1-h))
      J44= -I
      J45= -I*fhat
@@ -333,6 +333,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     
     if MaxNormOfU(DeltaU)>epsilon:
         Stopcondition=1
+        Uiend=Uiend-DeltaU
     else:
         Stopcondition=0
         Uiend=Uiend-DeltaU
@@ -352,7 +353,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
          if MaxNormOfU(DeltaU)<=epsilon:
              Stopcondition=0
              print('\t Newton Rapson loop \n i=%i \t ||delta U|| = %f < %f' %(i,MaxNormOfU(DeltaU),epsilon))    
-         if i>20:
+         if i>10:
             break
     
     return Uiend    
