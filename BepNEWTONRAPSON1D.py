@@ -58,7 +58,7 @@ if True:
     
     BOOL_concentration = False
     BOOL_bedevolution  = False
-    BOOL_two_open_ends = True
+    BOOL_two_open_ends = False
     
     BOOL_print_NR= False
     
@@ -232,20 +232,20 @@ def Fzetas(zetas,zetac,us,uc,C,h):
     ''' west boundary '''
     fzetas += WestBoundary*(
                             -zetas + 0
-                            -(1-0)*1/dx*(-uc.dot(WestBoundary)+uc.dot(NearWestBounary))
-                            +uc.dot(WestBoundary)*1/dx*(-0+h.dot(NearWestBounary))
+                            #-(1-0)*1/dx*(-uc.dot(WestBoundary)+uc.dot(NearWestBounary))
+                            #+uc.dot(WestBoundary)*1/dx*(-0+h.dot(NearWestBounary))
                             )
     
     ''' east boundary '''
     if BOOL_two_open_ends:
         fzetas += EastBoundary*(
                                 -zetas + Atilde*np.sin(phi)
-                                -(1-1+H2/H1)*1/dx*(-uc.dot(NearEastBounary)+uc.dot(EastBoundary))
-                                +uc.dot(EastBoundary)*1/dx*(-h.dot(NearEastBounary)+1-H2/H1)
+                                #-(1-1+H2/H1)*1/dx*(-uc.dot(NearEastBounary)+uc.dot(EastBoundary))
+                                #+uc.dot(EastBoundary)*1/dx*(-h.dot(NearEastBounary)+1-H2/H1)
                                 )
     else:
         fzetas += EastBoundary*(
-                                1/dx*(-zetas.dot(NearEastBounary)+zetas.dot(EastBoundary)) 
+                                1/dx*(sp.kron(np.array([EastBoundary]).T,-NearEastBounary+EastBoundary)*zetas) 
                                 -(1-1+H2/H1)*1/dx*(-uc.dot(NearEastBounary)+0 )
                                 +   0*1/dx*(-h.dot(NearEastBounary)+1-H2/H1)
                                 )
@@ -260,15 +260,15 @@ def Fzetac(zetas,zetac,us,uc,C,h):
     ''' west boundary '''
     fzetac += WestBoundary*(
                             -zetac+A
-                            +(1-0)*1/dx*(-us.dot(WestBoundary)+us.dot(NearWestBounary))
-                            -us.dot(WestBoundary)*1/dx*(-0+h.dot(NearWestBounary))
+                            #+(1-0)*1/dx*(-us.dot(WestBoundary)+us.dot(NearWestBounary))
+                            #-us.dot(WestBoundary)*1/dx*(-0+h.dot(NearWestBounary))
                             )
     ''' east boundary ''' 
     if BOOL_two_open_ends:
         fzetac += EastBoundary*(
                                 -zetac + Atilde*np.cos(phi)
-                                +(1-1+H2/H1)*1/dx*(-us.dot(NearEastBounary)+us.dot(EastBoundary))
-                                -us.dot(EastBoundary)*1/dx*(-h.dot(NearEastBounary)+1-H2/H1)
+                                #+(1-1+H2/H1)*1/dx*(-us.dot(NearEastBounary)+us.dot(EastBoundary))
+                                #-us.dot(EastBoundary)*1/dx*(-h.dot(NearEastBounary)+1-H2/H1)
             )
     else:
         fzetac += EastBoundary*(
@@ -290,18 +290,23 @@ def Fus(zetas,zetac,us,uc,C,h):
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
     fus   +=  WestBoundary*(
-                            
-                          
+                            -us
+                            -np.divide(r, 1-h)*uc
                             -lamnda**(-2)*1/(dx)*(-0 +zetas.dot(NearWestBounary))
                             )
     ''' east boundary ''' 
     if BOOL_two_open_ends:
+         ' KNOWN : zetas = 0 zetac = A  '
+         ' UNKOWN : us, uc '
          fus += EastBoundary*(
+                             -us#-(Atilde*np.cos(phi)+uc.dot(NearEastBounary))/(1+h.dot(NearEastBounary)-1+H2/H1)
+                             -np.divide(r, 1-h)*uc
                             
-                            
-                             -lamnda**(-2)*1/dx*(-zetas.dot(NearEastBounary) +Atilde*np.sin(phi))
+                             -lamnda**(-2)*1/dx*(-zetas.dot(NearEastBounary) +Atilde*np.sin(phi)) #wrong
                              )
     else:
+         ' KNOWN :  d/dx zetas=0  d/dx zetac = 0 , us=0 , uc = 0 '
+         ' UNKOWN : zetas, zetac '
          fus += EastBoundary*(
                              -us+0
                              -lamnda**(-2)*1/dx*(-zetas.dot(NearEastBounary)+zetas.dot(EastBoundary))
@@ -319,6 +324,8 @@ def Fuc(zetas,zetac,us,uc,C,h):
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
     fuc     +=  WestBoundary*(
+                                -uc
+                                +np.divide(r, 1-h)*us
                                 
                                 
                                 +lamnda**(-2)*1/dx*( -A +zetac.dot(NearWestBounary))
@@ -330,7 +337,10 @@ def Fuc(zetas,zetac,us,uc,C,h):
         ' KNOWN  : zetas = Atilde*sin zetac = Atilde*cos '
         ' UNKOWN : us , uc '
         fuc += EastBoundary*(
-                                +lamnda**(-2)*1/dx*(-zetac.dot(NearEastBounary)  +Atilde*np.cos(phi))
+                                -uc#-(Atilde*np.sin(phi)*dx-uc.dot(NearEastBounary))/(-1+h.dot(NearEastBounary)-1+H2/H1)
+                                +np.divide(r, 1-h)*us
+                                +lamnda**(-2)*1/dx*(-zetac.dot(NearEastBounary)  + Atilde*np.cos(phi))
+                                
                                 )
     else:
         fuc += EastBoundary*(

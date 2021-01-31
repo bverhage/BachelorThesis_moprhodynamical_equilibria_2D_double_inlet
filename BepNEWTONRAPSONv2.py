@@ -343,12 +343,12 @@ def F(U):
             #zetas
             #+lamnda**(-2)*Atilde*np.cos(phi)*EastBoundary/(2*dx)*(1-H2/H1)*EastBoundary/(2*dx)
             
-            (1-h)*EastBoundary*Atilde*np.sin(phi)*H1/(2*H2)+uc*EastBoundary/(2*dx)*(1-H2/H1-(1-h)*H1/H2*(1-H2/H1)),
+            (1-h)*EastBoundary*Atilde*np.sin(phi)*H1/(2*H2),#+uc*EastBoundary/(2*dx)*(1-H2/H1-(1-h)*H1/H2*(1-H2/H1)),
             
             #zetac
             #-us*(1-H2/H1)*EastBoundary*H/(2*dx)
             
-            (1-h)*EastBoundary*Atilde*np.cos(phi)*H1/(2*H2)-us*EastBoundary/(2*dx)*(1-H2/H1-(1-h)*H1/H2*(1-H2/H1)),
+            (1-h)*EastBoundary*Atilde*np.cos(phi)*H1/(2*H2),#-us*EastBoundary/(2*dx)*(1-H2/H1-(1-h)*H1/H2*(1-H2/H1)),
             #us
             -lamnda**(-2)*Atilde*np.sin(phi)*EastBoundary/(2*dx),
             #uc
