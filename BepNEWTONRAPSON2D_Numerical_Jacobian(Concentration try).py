@@ -42,7 +42,7 @@ if True:
     sigma = 1.4*10**-4 #/s
     
     lamnda = sigma*Lx/(np.sqrt(g*H1))
-    Nx = 50+1
+    Nx = 25+1
     Ny = int((Nx-1)*1/2)+1
     
     dx = 1/Nx
@@ -153,6 +153,7 @@ if True:
     ICzeta0 = create(Nx,Ny,func0)
     ICu0    = create(Nx,Ny,func0)
     ICv0    = create(Nx,Ny,func0)
+    ICC0    = create(Nx,Ny,func0)
     h    = create(Nx,Ny,bedprofile)
 
 
@@ -244,7 +245,7 @@ I_yoffL = sp.diags(np.ones((Ny+1)*(Nx+1)-(Nx+1)), offsets=-(Nx+1))
 
 ''' Initial condition '''
 
-Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0))
+Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0,ICC0))
 
 
 '''
@@ -258,14 +259,15 @@ Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0))
 
 def MaxNormOfU(U):
      ''' The max 2 norm of U=(u,v)^T w'''
-     zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+     zetas,zetac,us,uc,vs,vc,C=np.array_split(U,7)
      return np.max([
          np.linalg.norm(zetas),
          np.linalg.norm(zetac),
          np.linalg.norm(us),
          np.linalg.norm(uc),
          np.linalg.norm(vs),
-         np.linalg.norm(vc)
+         np.linalg.norm(vc),
+         np.linalg.norm(C)
          ])
  
 def cornerfix(NP_array):
@@ -276,7 +278,7 @@ def beta(h):
     return 1/(1-np.exp(-lamndad*(1-h)))
 
 
-def Fzetas(zetas,zetac,us,uc,vs,vc):
+def Fzetas(zetas,zetac,us,uc,vs,vc,C):
     ''' interior '''
     
     fzetas =-zetas-(1-h)*(LxD*uc+LyD*vc)+uc*(LxD*h)+vc*(LyD*h)
@@ -317,7 +319,7 @@ def Fzetas(zetas,zetac,us,uc,vs,vc):
     #fzetas += cornerfix(zetas)
     return fzetas
 
-def Fzetac(zetas,zetac,us,uc,vs,vc):
+def Fzetac(zetas,zetac,us,uc,vs,vc,C):
     ''' interior '''
     fzetac =-zetac+(1-h)*(LxD*us+LyD*vs)-us*(LxD*h)-vs*(LyD*h)
     
@@ -355,7 +357,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc):
     return fzetac
 
 
-def Fus(zetas,zetac,us,uc,vs,vc):
+def Fus(zetas,zetac,us,uc,vs,vc,C):
     ''' interior '''
     fus   = -us +fhat*vc-np.divide(r, 1-h)*uc-lamnda**(-2)*LxD*zetas
     
@@ -417,7 +419,7 @@ def Fus(zetas,zetac,us,uc,vs,vc):
     #fus += cornerfix(us)
     return fus
          
-def Fuc(zetas,zetac,us,uc,vs,vc):
+def Fuc(zetas,zetac,us,uc,vs,vc,C):
     ''' interior '''
     fuc   = -uc -fhat*vs +np.divide(r, 1-h)*us +lamnda**(-2)*LxD*zetac
     
@@ -479,7 +481,7 @@ def Fuc(zetas,zetac,us,uc,vs,vc):
     #fuc += cornerfix(uc)
     return fuc
 
-def Fvs(zetas,zetac,us,uc,vs,vc):
+def Fvs(zetas,zetac,us,uc,vs,vc,C):
     ''' interior '''
     fvs   = -vs -fhat*uc -np.divide(r, 1-h)*vc -lamnda**(-2)*LyD*zetas
     
@@ -512,7 +514,7 @@ def Fvs(zetas,zetac,us,uc,vs,vc):
     fvs += SECorner*(-vs-fhat*uc -np.divide(r, 1-h)*vc -lamnda**(-2)*LyD*zetas)
     return fvs
 
-def Fvc(zetas,zetac,us,uc,vs,vc):
+def Fvc(zetas,zetac,us,uc,vs,vc,C):
     ''' interior '''
     fvc   = -vc +fhat*us   +np.divide(r, 1-h)*vs +lamnda**(-2)*LyD*zetac
     
@@ -546,16 +548,53 @@ def Fvc(zetas,zetac,us,uc,vs,vc):
     fvc += SECorner*(-vc+fhat*us+np.divide(r,1-h)*vs+lamnda**(-2)*LyD*zetac)
     return fvc
 
+def FC(zetas,zetac,us,uc,vs,vc,C):
+    ''' interior '''
+    fC  = -epsilon*beta(h)*C +epsilon*a*k*A_x*C
+    fC += epsilon*a*k*lamndad*(beta(h)*LxD*h*LxD*C+C*(beta(h)*A_x*h+LxD*beta(h)*LxD*h))
+    fC += us*us+vs*vs+uc*uc+vc*vc
+    
+    fC = Interior*fC
+    
+    ''' west boundary '''
+    ' KNOWN : zetas = 0 zetac = A  '
+    ' UNKOWN : us, uc '
+    fC   +=  WestBoundary*(-C+0)
+                            
+    #                         )
+    # ''' east boundary ''' 
+
+    fC += EastBoundary*(-C+0)
+    #                          )
+         
+    # ''' South Boundary '''
+    fC += SouthBoundary*(1/dy*(-C+I_yoffR*C))
+    
+    ''' North Boundary ''' 
+    fC += NorthBoundary*(1/dy*(-I_yoffL*C+C))
+    
+    # ''' quick corner fix'''
+    
+    fC += NWCorner*(-C+0)
+    
+    fC += SWCorner*(-C+0)
+    
+    fC += NECorner*(-C+0)
+    
+    fC += SECorner*(-C+0)
+    return fC
 
 def F(U):
-    zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+    zetas,zetac,us,uc,vs,vc,C=np.array_split(U,7)
     
-    ans=np.concatenate((Fzetas(zetas,zetac,us,uc,vs,vc),
-                        Fzetac(zetas,zetac,us,uc,vs,vc),
-                           Fus(zetas,zetac,us,uc,vs,vc),
-                           Fuc(zetas,zetac,us,uc,vs,vc),
-                           Fvs(zetas,zetac,us,uc,vs,vc),
-                           Fvc(zetas,zetac,us,uc,vs,vc)))
+    ans=np.concatenate((Fzetas(zetas,zetac,us,uc,vs,vc,C),
+                        Fzetac(zetas,zetac,us,uc,vs,vc,C),
+                           Fus(zetas,zetac,us,uc,vs,vc,C),
+                           Fuc(zetas,zetac,us,uc,vs,vc,C),
+                           Fvs(zetas,zetac,us,uc,vs,vc,C),
+                           Fvc(zetas,zetac,us,uc,vs,vc,C),
+                            FC(zetas,zetac,us,uc,vs,vc,C)
+                           ))
 
     return ans
 
@@ -563,7 +602,7 @@ def F(U):
 
 
 def NumericalJacobian(U):
-    zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
+    zetas,zetac,us,uc,vs,vc,C=np.array_split(U,7)
     
     # J11=sp.csr_matrix(I.shape);J12=sp.csr_matrix(I.shape);J13=sp.csr_matrix(I.shape);J14=sp.csr_matrix(I.shape);J15=sp.csr_matrix(I.shape);J16=sp.csr_matrix(I.shape);
     # J21=sp.csr_matrix(I.shape);J22=sp.csr_matrix(I.shape);J23=sp.csr_matrix(I.shape);J24=sp.csr_matrix(I.shape);J25=sp.csr_matrix(I.shape);J26=sp.csr_matrix(I.shape);
@@ -574,29 +613,32 @@ def NumericalJacobian(U):
 
 
 
-    J11=np.zeros(I.shape);J12=np.zeros(I.shape);J13=np.zeros(I.shape);J14=np.zeros(I.shape);J15=np.zeros(I.shape);J16=np.zeros(I.shape);
-    J21=np.zeros(I.shape);J22=np.zeros(I.shape);J23=np.zeros(I.shape);J24=np.zeros(I.shape);J25=np.zeros(I.shape);J26=np.zeros(I.shape);
-    J31=np.zeros(I.shape);J32=np.zeros(I.shape);J33=np.zeros(I.shape);J34=np.zeros(I.shape);J35=np.zeros(I.shape);J36=np.zeros(I.shape);
-    J41=np.zeros(I.shape);J42=np.zeros(I.shape);J43=np.zeros(I.shape);J44=np.zeros(I.shape);J45=np.zeros(I.shape);J46=np.zeros(I.shape);
-    J51=np.zeros(I.shape);J52=np.zeros(I.shape);J53=np.zeros(I.shape);J54=np.zeros(I.shape);J55=np.zeros(I.shape);J56=np.zeros(I.shape);
-    J61=np.zeros(I.shape);J62=np.zeros(I.shape);J63=np.zeros(I.shape);J64=np.zeros(I.shape);J65=np.zeros(I.shape);J66=np.zeros(I.shape);
+    J11=np.zeros(I.shape);J12=np.zeros(I.shape);J13=np.zeros(I.shape);J14=np.zeros(I.shape);J15=np.zeros(I.shape);J16=np.zeros(I.shape);J17=np.zeros(I.shape);
+    J21=np.zeros(I.shape);J22=np.zeros(I.shape);J23=np.zeros(I.shape);J24=np.zeros(I.shape);J25=np.zeros(I.shape);J26=np.zeros(I.shape);J27=np.zeros(I.shape);
+    J31=np.zeros(I.shape);J32=np.zeros(I.shape);J33=np.zeros(I.shape);J34=np.zeros(I.shape);J35=np.zeros(I.shape);J36=np.zeros(I.shape);J37=np.zeros(I.shape);
+    J41=np.zeros(I.shape);J42=np.zeros(I.shape);J43=np.zeros(I.shape);J44=np.zeros(I.shape);J45=np.zeros(I.shape);J46=np.zeros(I.shape);J47=np.zeros(I.shape);
+    J51=np.zeros(I.shape);J52=np.zeros(I.shape);J53=np.zeros(I.shape);J54=np.zeros(I.shape);J55=np.zeros(I.shape);J56=np.zeros(I.shape);J57=np.zeros(I.shape);
+    J61=np.zeros(I.shape);J62=np.zeros(I.shape);J63=np.zeros(I.shape);J64=np.zeros(I.shape);J65=np.zeros(I.shape);J66=np.zeros(I.shape);J67=np.zeros(I.shape);
+    J71=np.zeros(I.shape);J72=np.zeros(I.shape);J73=np.zeros(I.shape);J74=np.zeros(I.shape);J75=np.zeros(I.shape);J76=np.zeros(I.shape);J77=np.zeros(I.shape);
     
     for i in tqdm(range(0,(Nx+1)*(Ny+1))):
         h_small=1e-8*I.toarray()[:,i]
         
-        for NJ_func in {Fzetas,Fzetac,Fus,Fuc,Fvs,Fvc}:
+        for NJ_func in {Fzetas,Fzetac,Fus,Fuc,Fvs,Fvc,FC}:
             if NJ_func == Fzetas:
-                J1=J11;     J2=J12;     J3=J13;     J4=J14;     J5=J15;     J6=J16;
+                J1=J11;     J2=J12;     J3=J13;     J4=J14;     J5=J15;     J6=J16;     J7=J17;
             if NJ_func == Fzetac:
-                J1=J21;     J2=J22;     J3=J23;     J4=J24;     J5=J25;     J6=J26;
+                J1=J21;     J2=J22;     J3=J23;     J4=J24;     J5=J25;     J6=J26;     J7=J27;
             if NJ_func == Fus:
-                J1=J31;     J2=J32;     J3=J33;     J4=J34;     J5=J35;     J6=J36;
+                J1=J31;     J2=J32;     J3=J33;     J4=J34;     J5=J35;     J6=J36;     J7=J37;
             if NJ_func == Fuc:
-                J1=J41;     J2=J42;     J3=J43;     J4=J44;     J5=J45;     J6=J46;
+                J1=J41;     J2=J42;     J3=J43;     J4=J44;     J5=J45;     J6=J46;     J7=J47;
             if NJ_func == Fvs:
-                J1=J51;     J2=J52;     J3=J53;     J4=J54;     J5=J55;     J6=J56; 
+                J1=J51;     J2=J52;     J3=J53;     J4=J54;     J5=J55;     J6=J56;     J7=J57; 
             if NJ_func == Fvc:
-                J1=J61;     J2=J62;     J3=J63;     J4=J64;     J5=J65;     J6=J66;
+                J1=J61;     J2=J62;     J3=J63;     J4=J64;     J5=J65;     J6=J66;     J7=J67;
+            if NJ_func == FC:
+                J1=J71;     J2=J72;     J3=J63;     J4=J74;     J5=J75;     J6=J76;     J7=J77;
 
                 
             # J1[:,i] = np.array([(NJ_func(zetas+h_small,zetac,us,uc,vs,vc)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc))/(2*np.linalg.norm(h_small))]).T
@@ -605,22 +647,23 @@ def NumericalJacobian(U):
             # J4[:,i] = np.array([(NJ_func(zetas,zetac,us,uc+h_small,vs,vc)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc))/(2*np.linalg.norm(h_small))]).T
             # J5[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs+h_small,vc)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc))/(2*np.linalg.norm(h_small))]).T
             # J6[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs,vc+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small))/(2*np.linalg.norm(h_small))]).T
-            J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc))/(2*np.linalg.norm(h_small))
-            J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc))/(2*np.linalg.norm(h_small))
-            J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc))/(2*np.linalg.norm(h_small))
-            J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc))/(2*np.linalg.norm(h_small))
-            J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc))/(2*np.linalg.norm(h_small))
-            J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small))/(2*np.linalg.norm(h_small))
+            J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc,C)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc,C))/(2*np.linalg.norm(h_small))
+            J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc,C)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc,C))/(2*np.linalg.norm(h_small))
+            J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc,C)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc,C))/(2*np.linalg.norm(h_small))
+            J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc,C)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc,C))/(2*np.linalg.norm(h_small))
+            J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc,C)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc,C))/(2*np.linalg.norm(h_small))
+            J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small,C)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small,C))/(2*np.linalg.norm(h_small))
+            J7[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc,C-h_small))/(2*np.linalg.norm(h_small))
 
          
     J=sp.bmat([
-                [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16)],
-                [sp.csr_matrix(J21), sp.csr_matrix(J22), sp.csr_matrix(J23), sp.csr_matrix(J24), sp.csr_matrix(J25), sp.csr_matrix(J26)],
-                [sp.csr_matrix(J31), sp.csr_matrix(J32), sp.csr_matrix(J33), sp.csr_matrix(J34), sp.csr_matrix(J35), sp.csr_matrix(J36)],
-                [sp.csr_matrix(J41), sp.csr_matrix(J42), sp.csr_matrix(J43), sp.csr_matrix(J44), sp.csr_matrix(J45), sp.csr_matrix(J46)],
-                [sp.csr_matrix(J51), sp.csr_matrix(J52), sp.csr_matrix(J53), sp.csr_matrix(J54), sp.csr_matrix(J55), sp.csr_matrix(J56)],
-                [sp.csr_matrix(J61), sp.csr_matrix(J62), sp.csr_matrix(J63), sp.csr_matrix(J64), sp.csr_matrix(J65), sp.csr_matrix(J66)]
-
+                [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16), sp.csr_matrix(J17)],
+                [sp.csr_matrix(J21), sp.csr_matrix(J22), sp.csr_matrix(J23), sp.csr_matrix(J24), sp.csr_matrix(J25), sp.csr_matrix(J26), sp.csr_matrix(J27)],
+                [sp.csr_matrix(J31), sp.csr_matrix(J32), sp.csr_matrix(J33), sp.csr_matrix(J34), sp.csr_matrix(J35), sp.csr_matrix(J36), sp.csr_matrix(J37)],
+                [sp.csr_matrix(J41), sp.csr_matrix(J42), sp.csr_matrix(J43), sp.csr_matrix(J44), sp.csr_matrix(J45), sp.csr_matrix(J46), sp.csr_matrix(J47)],
+                [sp.csr_matrix(J51), sp.csr_matrix(J52), sp.csr_matrix(J53), sp.csr_matrix(J54), sp.csr_matrix(J55), sp.csr_matrix(J56), sp.csr_matrix(J57)],
+                [sp.csr_matrix(J61), sp.csr_matrix(J62), sp.csr_matrix(J63), sp.csr_matrix(J64), sp.csr_matrix(J65), sp.csr_matrix(J66), sp.csr_matrix(J67)],
+                [sp.csr_matrix(J71), sp.csr_matrix(J72), sp.csr_matrix(J73), sp.csr_matrix(J74), sp.csr_matrix(J75), sp.csr_matrix(J76), sp.csr_matrix(J77)]
 
                 ],format='csr')
     return J
@@ -633,7 +676,7 @@ NJ=NumericalJacobian(Uinnitalguess)
 if False:
     plt.figure();
     plt.title('Numericla Jacobian')
-    for j in range(1,6):
+    for j in range(1,7):
         if False:
             for x in np.where(NorthBoundary == 1)[0]: plt.axvline((j-1)*(Nx+1)*(Ny+1)+x,color='#4dff4d',linewidth=2)
             for y in np.where(NorthBoundary == 1)[0]: plt.axhline((j-1)*(Nx+1)*(Ny+1)+y,color='#4dff4d',linewidth=2)
@@ -705,12 +748,12 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
 # the run
     
 Ufinal=NewtonRapsonInnerloop(Uinnitalguess)
-zetas,zetac,us,uc,vs,vc=np.array_split(Ufinal,6)
+zetas,zetac,us,uc,vs,vc,C=np.array_split(Ufinal,7)
 
 Check=np.where(F(Ufinal)!=0)
 if Check[0].size>0 :
     print('\t ------- F=!0 ------- \t \n')
-    F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc=np.array_split(F(Ufinal),6)
+    F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C=np.array_split(F(Ufinal),7)
     
     fig, ((ax1,ax3,ax5),(ax2,ax4,ax6)) = plt.subplots(2,3)
     plt.gca().invert_yaxis()
