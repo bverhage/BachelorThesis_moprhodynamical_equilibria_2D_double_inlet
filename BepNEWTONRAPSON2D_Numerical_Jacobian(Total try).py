@@ -13,7 +13,7 @@ if True:
     import scipy.sparse.linalg as la
     import matplotlib.pyplot as plt
     import matplotlib.animation as animation
-    import time
+
     
     from tqdm import tqdm 
     
@@ -24,11 +24,11 @@ if True:
 if True:
     Lx = 1*59*10**3 #m
     
-    Ly = 1*10**3 #m
+    Ly =10**3 #m
     
     H1 = 12#m
     
-    H2 = 4
+    H2 = 6
     
     A = 0.74*1/H1
     
@@ -42,27 +42,29 @@ if True:
     sigma = 1.4*10**-4 #/s
     
     lamnda = sigma*Lx/(np.sqrt(g*H1))
-    Nx = 25+1
+    Nx = 50+1
     Ny = int((Nx-1)*1/2)+1
     
     dx = 1/Nx
     dy = 1/Ny
     
     a = 6.222*10**(-2)
-    r = -(8*CD*A*Lx)/(3*np.pi*H1**2)/(H1*sigma)
+    U_const = A*Lx*sigma/H1
+    r_hat=8*U_const*CD/(3*np.pi)
+    r = r_hat/(H1*sigma)
     
     
     fhat = 7.1*10**-1
     
     k = 2.052*10**(-4)
     
-    Mutilde = 10**(-6)
+    Mutilde = 10**(-10)
     
     epsilon = A/H1
     
     lamndad = 1.8
     
-    delta_s = 0.2 #9.5*10**(-4)  
+    delta_s = 9.5*10**(-4)  
     
     BOOL_two_open_ends = True
     
@@ -72,10 +74,14 @@ if True:
     
     def bedprofile(x,y):
 
-         return 0*(1-H2/H1)*x
+         return (1-H2/H1)*x
     
     def func0(x,y):
         return 0
+    
+    
+    
+    
     
     def westboundary(x,y):
         if x==0 and 0<y<1:
@@ -552,7 +558,7 @@ def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
 def FC(zetas,zetac,us,uc,vs,vc,C,h):
     ''' interior '''
     fC  = -epsilon*beta(h)*C +epsilon*a*k*A_x*C
-    fC += epsilon*a*k*lamndad*(beta(h)*LxD*h*LxD*C+C*(beta(h)*A_x*h+LxD*beta(h)*LxD*h))
+    fC += epsilon*a*k*lamndad*(beta(h)*LxD*h*LxD*C+ C*( beta(h)*A_x*h + LxD*beta(h)*LxD*h ))
     fC += us*us+vs*vs+uc*uc+vc*vc
     
     fC = Interior*fC
@@ -587,8 +593,10 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
 
 def Fh(zetas,zetac,us,uc,vs,vc,C,h):
     ''' interior '''
-    fh  = Mutilde*A_x*h-delta_s*(-epsilon*beta(h)*C+(us*us+uc*uc))
-
+    fh  = -Mutilde/delta_s*A_x*h
+    fh += -delta_s*(-epsilon*beta(h)*C+(us*us+vs*vs+uc*uc+vc*vc))
+    #fh += delta_s*(epsilon*a*k*A_x*C+epsilon*a*k*lamndad*( beta(h)*LxD*h*LxD*C+ C*(beta(h)*A_x*h+LxD*beta(h)*LxD*h) ))
+ #
     
     fh = Interior*fh
     
@@ -637,10 +645,9 @@ def F(U):
 
 
 
-
 def NumericalJacobian(U):
     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
-    
+    print('\n \t Numerical Jacobian Inner loop')
     # J11=sp.csr_matrix(I.shape);J12=sp.csr_matrix(I.shape);J13=sp.csr_matrix(I.shape);J14=sp.csr_matrix(I.shape);J15=sp.csr_matrix(I.shape);J16=sp.csr_matrix(I.shape);
     # J21=sp.csr_matrix(I.shape);J22=sp.csr_matrix(I.shape);J23=sp.csr_matrix(I.shape);J24=sp.csr_matrix(I.shape);J25=sp.csr_matrix(I.shape);J26=sp.csr_matrix(I.shape);
     # J31=sp.csr_matrix(I.shape);J32=sp.csr_matrix(I.shape);J33=sp.csr_matrix(I.shape);J34=sp.csr_matrix(I.shape);J35=sp.csr_matrix(I.shape);J36=sp.csr_matrix(I.shape);
@@ -696,14 +703,14 @@ def NumericalJacobian(U):
             J8[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C,h+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc,C,h-h_small))/(2*np.linalg.norm(h_small))
          
     J=sp.bmat([
-                [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16), sp.csr_matrix(J17),sp.csr_matrix(J18)],
-                [sp.csr_matrix(J21), sp.csr_matrix(J22), sp.csr_matrix(J23), sp.csr_matrix(J24), sp.csr_matrix(J25), sp.csr_matrix(J26), sp.csr_matrix(J27),sp.csr_matrix(J28)],
-                [sp.csr_matrix(J31), sp.csr_matrix(J32), sp.csr_matrix(J33), sp.csr_matrix(J34), sp.csr_matrix(J35), sp.csr_matrix(J36), sp.csr_matrix(J37),sp.csr_matrix(J38)],
-                [sp.csr_matrix(J41), sp.csr_matrix(J42), sp.csr_matrix(J43), sp.csr_matrix(J44), sp.csr_matrix(J45), sp.csr_matrix(J46), sp.csr_matrix(J47),sp.csr_matrix(J48)],
-                [sp.csr_matrix(J51), sp.csr_matrix(J52), sp.csr_matrix(J53), sp.csr_matrix(J54), sp.csr_matrix(J55), sp.csr_matrix(J56), sp.csr_matrix(J57),sp.csr_matrix(J58)],
-                [sp.csr_matrix(J61), sp.csr_matrix(J62), sp.csr_matrix(J63), sp.csr_matrix(J64), sp.csr_matrix(J65), sp.csr_matrix(J66), sp.csr_matrix(J67),sp.csr_matrix(J68)],
-                [sp.csr_matrix(J71), sp.csr_matrix(J72), sp.csr_matrix(J73), sp.csr_matrix(J74), sp.csr_matrix(J75), sp.csr_matrix(J76), sp.csr_matrix(J77),sp.csr_matrix(J78)],
-                [sp.csr_matrix(J81), sp.csr_matrix(J82), sp.csr_matrix(J83), sp.csr_matrix(J84), sp.csr_matrix(J85), sp.csr_matrix(J86), sp.csr_matrix(J87),sp.csr_matrix(J88)]
+                [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16), sp.csr_matrix(J17), sp.csr_matrix(J18)],
+                [sp.csr_matrix(J21), sp.csr_matrix(J22), sp.csr_matrix(J23), sp.csr_matrix(J24), sp.csr_matrix(J25), sp.csr_matrix(J26), sp.csr_matrix(J27), sp.csr_matrix(J28)],
+                [sp.csr_matrix(J31), sp.csr_matrix(J32), sp.csr_matrix(J33), sp.csr_matrix(J34), sp.csr_matrix(J35), sp.csr_matrix(J36), sp.csr_matrix(J37), sp.csr_matrix(J38)],
+                [sp.csr_matrix(J41), sp.csr_matrix(J42), sp.csr_matrix(J43), sp.csr_matrix(J44), sp.csr_matrix(J45), sp.csr_matrix(J46), sp.csr_matrix(J47), sp.csr_matrix(J48)],
+                [sp.csr_matrix(J51), sp.csr_matrix(J52), sp.csr_matrix(J53), sp.csr_matrix(J54), sp.csr_matrix(J55), sp.csr_matrix(J56), sp.csr_matrix(J57), sp.csr_matrix(J58)],
+                [sp.csr_matrix(J61), sp.csr_matrix(J62), sp.csr_matrix(J63), sp.csr_matrix(J64), sp.csr_matrix(J65), sp.csr_matrix(J66), sp.csr_matrix(J67), sp.csr_matrix(J68)],
+                [sp.csr_matrix(J71), sp.csr_matrix(J72), sp.csr_matrix(J73), sp.csr_matrix(J74), sp.csr_matrix(J75), sp.csr_matrix(J76), sp.csr_matrix(J77), sp.csr_matrix(J78)],
+                [sp.csr_matrix(J81), sp.csr_matrix(J82), sp.csr_matrix(J83), sp.csr_matrix(J84), sp.csr_matrix(J85), sp.csr_matrix(J86), sp.csr_matrix(J87), sp.csr_matrix(J88)]
                 ],format='csr')
     return J
 
@@ -741,6 +748,7 @@ if False:
 
 
 def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
+    print('\n \t  Starting Newton Rapson Method \t \n')
     epsilon=10**(-6)
     
     Uiend=np.copy(Uinnitalguess)
@@ -766,12 +774,20 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
          if Check>10**(20)*epsilon : # this is the fail save if the explodes.
              print('\n \t -----Divergence----- \n')
              break 
+         
+         if Check<=epsilon:
+             print('\t Newton Rapson loop stoped at \n i=%i \t ||F(U)|| = %f < %f\n' %(i,MaxNormOfU(F(Uiend)),epsilon))
+             print ('\n')
+             Stopcondition=0
+             break
+         
          if Check>epsilon and Check<10**(20)*epsilon:
-             
+
+             Stopcondition=1
              DeltaU=la.spsolve(NumericalJacobian(Uiend),F(Uiend))
              Uiend=Uiend-DeltaU
-             Stopcondition=1
              print('\t Newton Rapson loop \n i=%i \t ||F(U)|| = %f < %f\n' %(i,MaxNormOfU(F(Uiend)),epsilon))
+             
 
          if Check<=epsilon:
              print('\t Newton Rapson loop stoped at \n i=%i \t ||F(U)|| = %f < %f\n' %(i,MaxNormOfU(F(Uiend)),epsilon))
@@ -789,13 +805,15 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
          Check_2=np.where(1-h+zetac<0)
         
          if Check_1[0].size>0 or Check_2[0].size>0 :
-            break
             print('\n ------- \t  NON physical water model! \t ---------\n')
-        
-         Check=np.where(C<0)
-         if Check[0].size>0 :
             break
-            print('\n ------- \t  NON physical Concentration! \t ---------\n')
+            
+        
+         Check_3=np.where(C<0)
+         if Check_3[0].size>0 :
+            print('\n ------- \t  Negative Concentration! \t ---------\n')
+            #break
+            
     return Uiend    
 
 # the run
@@ -808,7 +826,8 @@ if Check[0].size>0 :
     print('\t ------- F=!0 ------- \t \n')
     F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=np.array_split(F(Ufinal),8)
     
-    fig, ((ax1,ax3,ax5),(ax2,ax4,ax6)) = plt.subplots(2,3)
+    fig, ((ax1,ax3,ax5,ax7),(ax2,ax4,ax6,ax8)) = plt.subplots(2,4)
+    plt.suptitle('F(U)') 
     plt.gca().invert_yaxis()
     imgzetas = ax1.imshow(reshape(F_zetas))
     ax1.title.set_text('$F(\zeta^{s})$')
@@ -838,6 +857,16 @@ if Check[0].size>0 :
     plt.gca().invert_yaxis()
     ax6.title.set_text('$F(vc)$')
     plt.colorbar(imgvc,orientation='horizontal',ax=ax6)
+    
+    imgC=ax7.imshow(reshape(F_C))
+    plt.gca().invert_yaxis()
+    ax7.title.set_text('$F(C)$')
+    plt.colorbar(imgC,orientation='horizontal',ax=ax7)
+    
+    imgh=ax8.imshow(reshape(F_h))
+    plt.gca().invert_yaxis()
+    ax8.title.set_text('$F(h)$')
+    plt.colorbar(imgh,orientation='horizontal',ax=ax8)
     
 
 
@@ -1068,58 +1097,6 @@ def Animation2():
         # figure animation
         
     return animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
-    
-def Animation3():
-    
-    t = 0
-    
-    plt.ion()
-        
-    fig, ((ax1)) = plt.subplots(1)
-    # Inital conditoin 
-
-    # initialization of the movie figure
-    
-    
-    Carr = np.reshape( C,[Ny-1,Nx-1])
-    
-    imgC = ax1.imshow(Carr,extent=[dx/2,Lx-dx/2,Ly-dy/2,dy/2],interpolation='none',aspect='auto')
-        
-    ax1.title.set_text('Concentration')
-    plt.gca().invert_yaxis()
-    
-    plt.colorbar(imgC,orientation='horizontal',ax=ax1)
-    
-
-    tlt = plt.suptitle('t = %3.3f' %(t))
-        
-    Tend=1
-    NSteps=24*10
-    anim_dt=Tend/NSteps
-        
-    def animate(frame):
-        '''
-        This function updates the solution array
-        '''
-        global t, Nx, Ny
-        t = (frame+1)*anim_dt
-                        
-        C_anim1=C
-            
-                
-        imgC.set_array(np.reshape(C_anim1,[Ny-1,Nx-1]))
-        imgC.set_clim(C_anim1.min(),C_anim1.max())
-        
-        
-            
-        tlt.set_text('t = %3.3f' %(t))
-      
-                                                
-        return imgC
-        
-        # figure animation
-        
-    anim = animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
 
 staticplots()
 
