@@ -101,8 +101,6 @@ if True:
     print('| lambda_L = %.2e \t | a = %.2e \t | delta_s = %.2e \t | lambda_d = %.2e \t |' %(lamnda, a, delta_s, lamndad))   
     print()
     
-    BOOL_two_open_ends = True
-    
     BOOL_print_NR = False
     
     
@@ -111,55 +109,60 @@ if True:
 
          return (1-H2/H1)*x
     
-    def func0(x,y):
-        return 0
+    
+    def nb(x):
+         return max(np.sin(x*np.pi)/4,1)
+    
+    def sb(x):
+         return min(1-np.sin(x*np.pi)/4,1)
     
     
+
     
-    
-    
+
     def westboundary(x,y):
-        if x==0 and 0<y<1:
+        if x==0 and sb(x)<y<nb(x):
             return 1
 
         else: return 0
         
     def nearwestboundary(x,y):
-        if x==dx and 0<y<1:
+        if x==dx and sb(x)<y<nb(x):
             return 1
 
         else: return 0
 
     
     def eastboundary(x,y):
-        if x==1 and 0<y<1: return 1
+        if x==1 and sb(x)<y<nb(x): return 1
         else:return 0
     
     
     def neareastboundary(x,y):
-        if x==(Nx-1)*dx and 0<y<1: return 1
+        if x==(Nx-1)*dx and sb(x)<y<nb(x): return 1
         else:return 0
     
+    
     def northboundary(x,y):
-        if y==1  and 0<x<1:
+        if y==int(np.floor((nb(x)/dy)))*dy  and 0<x<1:
             return 1
 
         else: return 0
         
     def nearnorthboundary(x,y):
-        if y==(Ny-1)*dy and 0<x<1 :
+        if y==(int(np.floor(nb(x)/dy))-1)*dy and 0<x<1 :
             return 1
 
         else: return 0
 
     
     def southboundary(x,y):
-        if y==0 and 0<x<1: return 1
+        if y==int(np.ceil(sb(x)/dy))*dy and 0<x<1: return 1
         else:return 0
     
     
     def nearsouthboundary(x,y):
-        if y==dy and 0<x<1: return 1
+        if y==(int(np.ceil(sb(x)/dy))+1)*dy and 0<x<1: return 1
         else:return 0
         
     def NWcornerpoint(x,y):
@@ -179,6 +182,16 @@ if True:
         else: return 0
         
         
+        
+    def interior(x,y):
+        if int(np.ceil(sb(x)/dy))*dy<y<int(np.floor((nb(x)/dy)))*dy and 0<x<1: return 1
+        else: return 0
+        
+        
+    def func0(x,y):
+        return 0
+    
+          
     def create(Nx:int,Ny:int,func):
         Fvec=np.zeros((Nx+1)*(Ny+1))
         for j in range(Ny+1):
@@ -213,7 +226,7 @@ if True:
     SWCorner = create(Nx,Ny,SWcornerpoint)
     SECorner = create(Nx,Ny,SEcornerpoint)
     
-    Interior = np.ones(ICzeta0.shape)-WestBoundary-EastBoundary-NorthBoundary-SouthBoundary-NWCorner-NECorner-SWCorner-SECorner
+    Interior = create(Nx,Ny,interior)
     
     Encolsure = Interior+WestBoundary+NearWestBoundary+EastBoundary+EastBoundary+NearEastBoundary
     colsLX, rowsLX, valsLX = sp.find(Encolsure>0)
@@ -221,7 +234,7 @@ if True:
 def reshape(LEXarray):
     return np.reshape(LEXarray,[Ny+1,Nx+1])
 
-    print('\n Boundary checked commensing Newton Rapsons algorithem')
+    print('\n \t ------------------------- \n Boundary checked commensing Newton Rapsons algorithem')
 
 if True:
     
@@ -339,7 +352,7 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
     'x=1' 
     if BOOL_two_open_ends:
         fzetas += EastBoundary*(
-                                -zetas + Atilde*np.sin(phi)
+                                -zetas + Atilde/A*np.sin(phi)
 
                                 )
     else:
@@ -357,7 +370,7 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
 
     ''' quick corner fix'''
     
-    fzetas += NWCorner*(-zetas+0)+SWCorner*(-zetas+0)+NECorner*(-zetas + Atilde*np.sin(phi))+SECorner*(-zetas + Atilde*np.sin(phi))
+    fzetas += NWCorner*(-zetas+0)+SWCorner*(-zetas+0)+NECorner*(-zetas + Atilde/A*np.sin(phi))+SECorner*(-zetas + Atilde/A*np.sin(phi))
     #fzetas += cornerfix(zetas)
     return fzetas
 
@@ -370,14 +383,14 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
     ''' west boundary '''
     'x=0' 
     fzetac += WestBoundary*(
-                            -zetac + A
+                            -zetac + 1
   
                             )
     ''' east boundary '''
     'x=1' 
     if BOOL_two_open_ends:
         fzetac += EastBoundary*(
-                                -zetac + Atilde*np.cos(phi)
+                                -zetac + Atilde/A*np.cos(phi)
 
             )
     else:
@@ -386,7 +399,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
                                 )
     ''' South Boundary '''
     'y=0' 
-    fzetac += SouthBoundary*1/dy*(-zetac+I_yoffR*zetac)
+    fzetac += SouthBoundary*(1/dy*(-zetac+I_yoffR*zetac))
     
     ''' North Boundary ''' 
     'y=1' 
@@ -394,7 +407,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
 
     ''' quick corner fix'''
     
-    fzetac += NWCorner*(-zetac+A)+SWCorner*(-zetac+A)+NECorner*(-zetac + Atilde*np.cos(phi))+SECorner*(-zetac + Atilde*np.cos(phi))
+    fzetac += NWCorner*(-zetac+1)+SWCorner*(-zetac+1)+NECorner*(-zetac + Atilde/A*np.cos(phi))+SECorner*(-zetac + Atilde/A*np.cos(phi))
     #fzetac += cornerfix(zetac)
     return fzetac
 
@@ -424,7 +437,7 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
                              -us
                              +fhat*vc
                              -np.divide(r, 1-h)*uc
-                             -lamnda**(-2)*1/dx*(-I_xoffL*zetas +Atilde*np.sin(phi)) 
+                             -lamnda**(-2)*1/dx*(-I_xoffL*zetas +Atilde/A*np.sin(phi)) 
                              )
     else:
          ' KNOWN :  d/dx zetas=0  d/dx zetac = 0 , us=0 , uc = 0 '
@@ -436,11 +449,11 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
          
     ''' South Boundary '''
     'y=0' 
-    fus += SouthBoundary*(-us+fhat*vc-np.divide(r, 1-h)*uc-lamnda**(-2)*LxD*zetas)
+    fus += SouthBoundary*(-us)#+fhat*vc-np.divide(r, 1-h)*uc-lamnda**(-2)*LxD*zetas)
     
     ''' North Boundary ''' 
     'y=1' 
-    fus += NorthBoundary*(-us+fhat*vc-np.divide(r, 1-h)*uc-lamnda**(-2)*LxD*zetas)
+    fus += NorthBoundary*(-us)#+fhat*vc-np.divide(r, 1-h)*uc-lamnda**(-2)*LxD*zetas)
     
     
     # ''' quick corner fix'''
@@ -454,10 +467,10 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
     
     fus += NECorner*(-us
                       -np.divide(r, 1-h)*uc
-                      -lamnda**(-2)*1/dx*(-I_xoffL*zetas +Atilde*np.sin(phi)))
+                      -lamnda**(-2)*1/dx*(-I_xoffL*zetas +Atilde/A*np.sin(phi)))
     fus += SECorner*(-us
                       -np.divide(r, 1-h)*uc
-                      -lamnda**(-2)*1/dx*(-I_xoffL*zetas +Atilde*np.sin(phi)))
+                      -lamnda**(-2)*1/dx*(-I_xoffL*zetas +Atilde/A*np.sin(phi)))
     #fus += cornerfix(us)
     return fus
          
@@ -476,7 +489,7 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
                                 -fhat*vs
                                 +np.divide(r, 1-h)*us
                                 
-                                +lamnda**(-2)*1/dx*( -A +I_xoffR*zetac)
+                                +lamnda**(-2)*1/dx*( -1 +I_xoffR*zetac)
                                 )
                             
     ''' east boundary '''
@@ -488,7 +501,7 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
                                 -uc
                                 -fhat*vs
                                 +np.divide(r, 1-h)*us
-                                +lamnda**(-2)*1/dx*( -I_xoffL*zetac  + Atilde*np.cos(phi))
+                                +lamnda**(-2)*1/dx*( -I_xoffL*zetac  + Atilde/A*np.cos(phi))
                                 
                                 )
     else:
@@ -498,28 +511,28 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
                             )
     ''' South Boundary '''
     'y=0' 
-    fuc += SouthBoundary*(-uc-fhat*vs+np.divide(r, 1-h)*us+lamnda**(-2)*1/dx*LxD*zetac)
+    fuc += SouthBoundary*(-uc)#-fhat*vs+np.divide(r, 1-h)*us+lamnda**(-2)*1/dx*LxD*zetac)
     
     ''' North Boundary ''' 
     'y=1' 
-    fuc += NorthBoundary*(-uc-fhat*vs+np.divide(r, 1-h)*us+lamnda**(-2)*1/dx*LxD*zetac)
+    fuc += NorthBoundary*(-uc)#-fhat*vs+np.divide(r, 1-h)*us+lamnda**(-2)*1/dx*LxD*zetac)
     
     # ''' quick corner fix'''
     
     fuc += NWCorner*( -uc 
                       +np.divide(r, 1-h)*us
-                      +lamnda**(-2)*1/dx*(-A + I_xoffR*zetac))
+                      +lamnda**(-2)*1/dx*(-1 + I_xoffR*zetac))
     
     fuc += SWCorner*( -uc
                         +np.divide(r, 1-h)*us
-                        +lamnda**(-2)*1/dx*(-A +I_xoffR*zetac))
+                        +lamnda**(-2)*1/dx*(-1 +I_xoffR*zetac))
     
     fuc += NECorner*(-uc
                       +np.divide(r, 1-h)*us
-                      +lamnda**(-2)*1/dx*(-I_xoffL*zetac  + Atilde*np.cos(phi)))
+                      +lamnda**(-2)*1/dx*(-I_xoffL*zetac  + Atilde/A*np.cos(phi)))
     fuc += SECorner*(-uc
                       +np.divide(r, 1-h)*us
-                      +lamnda**(-2)*1/dx*(-I_xoffL*zetac  + Atilde*np.cos(phi)))
+                      +lamnda**(-2)*1/dx*(-I_xoffL*zetac  + Atilde/A*np.cos(phi)))
     #fuc += cornerfix(uc)
     return fuc
 
@@ -1019,7 +1032,7 @@ def Animation1():
         
         imgzetacross = ax1.plot(zeta0arr,'k.',markersize=1)
         ax1.title.set_text('zeta ')
-        ax1.set_ylim([-Atilde,Atilde])
+        ax1.set_ylim([-Atilde/A,Atilde/A])
         
         imgucross = ax2.plot(u0arr,'k.',markersize=1)
         ax2.title.set_text('u')
@@ -1093,7 +1106,7 @@ def Animation2():
     
 
     imgzetacross = ax12.plot(zeta0arr.mean(0),linewidth=1,color='k')
-    ax12.set_ylim([-(Atilde+A),(Atilde+A)])  
+    ax12.set_ylim([-(Atilde/A+1),(Atilde/A+1)])  
     
     ax2.quiver(X, Y, U, V, units='width')
     #ax2.quiverkey(q, 0.1, 0.1, 0.01, r'$2 \frac{m}{s}$', labelpos='E',
