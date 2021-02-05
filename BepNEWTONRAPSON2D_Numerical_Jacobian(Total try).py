@@ -38,7 +38,7 @@ if True:
     
     sigma = 1.4*10**-4 #/s
     
-    fhat = 7.1*10**-1
+    fhat = 0#7.1*10**-1
     
     ''' Inlets '''
     ''' Mars diep inlet''' 
@@ -62,7 +62,7 @@ if True:
     
     ''' Model pramters ''' 
     
-    Nx = 50+1                # interior points + 1
+    Nx = 10+1                # interior points + 1
     Ny = int((Nx-1)*1/2)+1
     
     dx = 1/Nx

@@ -198,7 +198,7 @@ if True:
     ICu0    = create(Nx,Ny,func0)
     ICv0    = create(Nx,Ny,func0)
     ICC0    = create(Nx,Ny,func0)
-    ICh0    = create(Nx,Ny,bedprofile)
+    h    = create(Nx,Ny,bedprofile)
 
 
     WestBoundary     = create(Nx,Ny,westboundary)
@@ -289,7 +289,7 @@ I_yoffL = sp.diags(np.ones((Ny+1)*(Nx+1)-(Nx+1)), offsets=-(Nx+1))
 
 ''' Initial condition '''
 
-Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0,ICC0,ICh0))
+Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0))
 
 
 '''
@@ -303,16 +303,14 @@ Uinnitalguess=np.concatenate((ICzeta0,ICzeta0,ICu0,ICu0,ICv0,ICv0,ICC0,ICh0))
 
 def MaxNormOfU(U):
      ''' The max 2 norm of U=(u,v)^T w'''
-     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+     zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
      return np.max([
          np.linalg.norm(zetas),
          np.linalg.norm(zetac),
          np.linalg.norm(us),
          np.linalg.norm(uc),
          np.linalg.norm(vs),
-         np.linalg.norm(vc),
-         np.linalg.norm(C),
-         np.linalg.norm(h)
+         np.linalg.norm(vc)
          ])
  
 def cornerfix(NP_array):
@@ -323,7 +321,7 @@ def beta(h):
     return 1/(1-np.exp(-lambda_d*(1-h)))
 
 
-def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
+def Fzetas(zetas,zetac,us,uc,vs,vc):
     ''' interior '''
     
     fzetas =-zetas-(1-h)*(LxD*uc+LyD*vc)+uc*(LxD*h)+vc*(LyD*h)
@@ -360,7 +358,7 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
     #fzetas += cornerfix(zetas)
     return fzetas
 
-def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
+def Fzetac(zetas,zetac,us,uc,vs,vc):
     ''' interior '''
     fzetac =-zetac+(1-h)*(LxD*us+LyD*vs)-us*(LxD*h)-vs*(LyD*h)
     
@@ -393,7 +391,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
     return fzetac
 
 
-def Fus(zetas,zetac,us,uc,vs,vc,C,h):
+def Fus(zetas,zetac,us,uc,vs,vc):
     ''' interior '''
     fus   = -us +fhat*vc-np.divide(r, 1-h)*uc-lambda_L**(2)*LxD*zetas
     
@@ -450,7 +448,7 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
     #fus += cornerfix(us)
     return fus
          
-def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
+def Fuc(zetas,zetac,us,uc,vs,vc):
     ''' interior '''
     fuc   = -uc -fhat*vs +np.divide(r, 1-h)*us +lambda_L**(2)*LxD*zetac
     
@@ -505,7 +503,7 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
     #fuc += cornerfix(uc)
     return fuc
 
-def Fvs(zetas,zetac,us,uc,vs,vc,C,h):
+def Fvs(zetas,zetac,us,uc,vs,vc):
     ''' interior '''
     fvs   = -vs -fhat*uc -np.divide(r, 1-h)*vc -lambda_L**(2)*LyD*zetas
     
@@ -538,7 +536,7 @@ def Fvs(zetas,zetac,us,uc,vs,vc,C,h):
     fvs += SECorner*(-vs)#-fhat*uc -np.divide(r, 1-h)*vc -lambda_L**(2)*LyD*zetas)
     return fvs
 
-def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
+def Fvc(zetas,zetac,us,uc,vs,vc):
     ''' interior '''
     fvc   = -vc +fhat*us   +np.divide(r, 1-h)*vs +lambda_L**(2)*LyD*zetac
     
@@ -572,90 +570,17 @@ def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
     fvc += SECorner*(-vc)#+fhat*us+np.divide(r,1-h)*vs+lambda_L**(2)*LyD*zetac)
     return fvc
 
-def FC(zetas,zetac,us,uc,vs,vc,C,h):
-    ''' interior '''
-    fC  = -epsilon*beta(h)*C +epsilon*a*k*A_x*C
-    fC += epsilon*a*k*lambda_d*(beta(h)*LxD*h*LxD*C+ C*( beta(h)*A_x*h + LxD*beta(h)*LxD*h ))
-    fC += us*us+vs*vs+uc*uc+vc*vc
-    
-    fC = Interior*fC
-    
-    ''' west boundary '''
-    ' KNOWN : zetas = 0 zetac = A  '
-    ' UNKOWN : us, uc '
-    fC   +=  WestBoundary*(-C+us*us+vs*vs+uc*uc+vc*vc)
-                            
-    #                         )
-    # ''' east boundary ''' 
 
-    fC += EastBoundary*(-C+us*us+vs*vs+uc*uc+vc*vc)
-    #                          )
-         
-    # ''' South Boundary '''
-    fC += SouthBoundary*(1/dy*(-C+I_yoffR*C))
-    
-    ''' North Boundary ''' 
-    fC += NorthBoundary*(1/dy*(-I_yoffL*C+C))
-    
-    # ''' quick corner fix'''
-    
-    fC += NWCorner*(-C+us*us+vs*vs+uc*uc+vc*vc)
-    
-    fC += SWCorner*(-C+us*us+vs*vs+uc*uc+vc*vc)
-    
-    fC += NECorner*(-C+us*us+vs*vs+uc*uc+vc*vc)
-    
-    fC += SECorner*(-C+us*us+vs*vs+uc*uc+vc*vc)
-    return fC
-
-def Fh(zetas,zetac,us,uc,vs,vc,C,h):
-    ''' interior '''
-    fh  = -Mutilde/delta_s*A_x*h
-    fh += -delta_s*(-epsilon*beta(h)*C+(us*us+vs*vs+uc*uc+vc*vc))
-    #fh += delta_s*(epsilon*a*k*A_x*C+epsilon*a*k*lambda_d*( beta(h)*LxD*h*LxD*C+ C*(beta(h)*A_x*h+LxD*beta(h)*LxD*h) ))
- #
-    
-    fh = Interior*fh
-    
-    ''' west boundary '''
-    ' KNOWN : zetas = 0 zetac = A  '
-    ' UNKOWN : us, uc '
-    fh   +=  WestBoundary*(-h+0)
-                            
-    #                         )
-    # ''' east boundary ''' 
-
-    fh += EastBoundary*(-h+1-H2/H1)
-    #                          )
-         
-    # ''' South Boundary '''
-    fh += SouthBoundary*(1/dy*(-h+I_yoffR*h))
-    
-    ''' North Boundary ''' 
-    fh += NorthBoundary*(1/dy*(-I_yoffL*h+h))
-    
-    # ''' quick corner fix'''
-    
-    fh += NWCorner*(-h+0)
-    
-    fh += SWCorner*(-h+0)
-    
-    fh += NECorner*(-h+1-H2/H1)
-    
-    fh += SECorner*(-h+1-H2/H1)
-    return fh
 
 def F(U):
-    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
     
-    ans=np.concatenate((Fzetas(zetas,zetac,us,uc,vs,vc,C,h),
-                        Fzetac(zetas,zetac,us,uc,vs,vc,C,h),
-                           Fus(zetas,zetac,us,uc,vs,vc,C,h),
-                           Fuc(zetas,zetac,us,uc,vs,vc,C,h),
-                           Fvs(zetas,zetac,us,uc,vs,vc,C,h),
-                           Fvc(zetas,zetac,us,uc,vs,vc,C,h),
-                            FC(zetas,zetac,us,uc,vs,vc,C,h),
-                            Fh(zetas,zetac,us,uc,vs,vc,C,h)
+    ans=np.concatenate((Fzetas(zetas,zetac,us,uc,vs,vc),
+                        Fzetac(zetas,zetac,us,uc,vs,vc),
+                           Fus(zetas,zetac,us,uc,vs,vc),
+                           Fuc(zetas,zetac,us,uc,vs,vc),
+                           Fvs(zetas,zetac,us,uc,vs,vc),
+                           Fvc(zetas,zetac,us,uc,vs,vc)
                            ))
 
     return ans
@@ -663,7 +588,7 @@ def F(U):
 
 
 def NumericalJacobian(U):
-    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    zetas,zetac,us,uc,vs,vc=np.array_split(U,6)
     print('\n \t Numerical Jacobian Inner loop')
     # J11=sp.csr_matrix(I.shape);J12=sp.csr_matrix(I.shape);J13=sp.csr_matrix(I.shape);J14=sp.csr_matrix(I.shape);J15=sp.csr_matrix(I.shape);J16=sp.csr_matrix(I.shape);
     # J21=sp.csr_matrix(I.shape);J22=sp.csr_matrix(I.shape);J23=sp.csr_matrix(I.shape);J24=sp.csr_matrix(I.shape);J25=sp.csr_matrix(I.shape);J26=sp.csr_matrix(I.shape);
@@ -680,13 +605,12 @@ def NumericalJacobian(U):
     J41=np.zeros(I.shape);J42=np.zeros(I.shape);J43=np.zeros(I.shape);J44=np.zeros(I.shape);J45=np.zeros(I.shape);J46=np.zeros(I.shape);J47=np.zeros(I.shape);J48=np.zeros(I.shape);
     J51=np.zeros(I.shape);J52=np.zeros(I.shape);J53=np.zeros(I.shape);J54=np.zeros(I.shape);J55=np.zeros(I.shape);J56=np.zeros(I.shape);J57=np.zeros(I.shape);J58=np.zeros(I.shape);
     J61=np.zeros(I.shape);J62=np.zeros(I.shape);J63=np.zeros(I.shape);J64=np.zeros(I.shape);J65=np.zeros(I.shape);J66=np.zeros(I.shape);J67=np.zeros(I.shape);J68=np.zeros(I.shape);
-    J71=np.zeros(I.shape);J72=np.zeros(I.shape);J73=np.zeros(I.shape);J74=np.zeros(I.shape);J75=np.zeros(I.shape);J76=np.zeros(I.shape);J77=np.zeros(I.shape);J78=np.zeros(I.shape);
-    J81=np.zeros(I.shape);J82=np.zeros(I.shape);J83=np.zeros(I.shape);J84=np.zeros(I.shape);J85=np.zeros(I.shape);J86=np.zeros(I.shape);J87=np.zeros(I.shape);J88=np.zeros(I.shape);
+
     
     for i in tqdm(range(0,(Nx+1)*(Ny+1))):
         h_small=1e-8*I.toarray()[:,i]
         
-        for NJ_func in {Fzetas,Fzetac,Fus,Fuc,Fvs,Fvc,FC,Fh}:
+        for NJ_func in {Fzetas,Fzetac,Fus,Fuc,Fvs,Fvc}:
             if NJ_func == Fzetas:
                 J1=J11;     J2=J12;     J3=J13;     J4=J14;     J5=J15;     J6=J16;     J7=J17;     J8=J18;
             if NJ_func == Fzetac:
@@ -699,10 +623,7 @@ def NumericalJacobian(U):
                 J1=J51;     J2=J52;     J3=J53;     J4=J54;     J5=J55;     J6=J56;     J7=J57;     J8=J58;
             if NJ_func == Fvc:
                 J1=J61;     J2=J62;     J3=J63;     J4=J64;     J5=J65;     J6=J66;     J7=J67;     J8=J68;
-            if NJ_func == FC:
-                J1=J71;     J2=J72;     J3=J63;     J4=J74;     J5=J75;     J6=J76;     J7=J77;     J8=J78;
-            if NJ_func == Fh:
-                J1=J81;     J2=J82;     J3=J83;     J4=J84;     J5=J85;     J6=J86;     J7=J87;     J8=J88;
+
                 
             # J1[:,i] = np.array([(NJ_func(zetas+h_small,zetac,us,uc,vs,vc)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc))/(2*np.linalg.norm(h_small))]).T
             # J2[:,i] = np.array([(NJ_func(zetas,zetac+h_small,us,uc,vs,vc)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc))/(2*np.linalg.norm(h_small))]).T
@@ -710,24 +631,21 @@ def NumericalJacobian(U):
             # J4[:,i] = np.array([(NJ_func(zetas,zetac,us,uc+h_small,vs,vc)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc))/(2*np.linalg.norm(h_small))]).T
             # J5[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs+h_small,vc)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc))/(2*np.linalg.norm(h_small))]).T
             # J6[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs,vc+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small))/(2*np.linalg.norm(h_small))]).T
-            J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc,C,h)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc,C,h)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc,C,h)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc,C,h)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc,C,h)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc,C,h))/(2*np.linalg.norm(h_small))
-            J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small,C,h)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small,C,h))/(2*np.linalg.norm(h_small))
-            J7[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C+h_small,h)-NJ_func(zetas,zetac,us,uc,vs,vc,C-h_small,h))/(2*np.linalg.norm(h_small))
-            J8[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C,h+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc,C,h-h_small))/(2*np.linalg.norm(h_small))
+            J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc))/(2*np.linalg.norm(h_small))
+            J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc))/(2*np.linalg.norm(h_small))
+            J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc))/(2*np.linalg.norm(h_small))
+            J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc))/(2*np.linalg.norm(h_small))
+            J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc))/(2*np.linalg.norm(h_small))
+            J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small))/(2*np.linalg.norm(h_small))
+
          
     J=sp.bmat([
-                [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16), sp.csr_matrix(J17), sp.csr_matrix(J18)],
-                [sp.csr_matrix(J21), sp.csr_matrix(J22), sp.csr_matrix(J23), sp.csr_matrix(J24), sp.csr_matrix(J25), sp.csr_matrix(J26), sp.csr_matrix(J27), sp.csr_matrix(J28)],
-                [sp.csr_matrix(J31), sp.csr_matrix(J32), sp.csr_matrix(J33), sp.csr_matrix(J34), sp.csr_matrix(J35), sp.csr_matrix(J36), sp.csr_matrix(J37), sp.csr_matrix(J38)],
-                [sp.csr_matrix(J41), sp.csr_matrix(J42), sp.csr_matrix(J43), sp.csr_matrix(J44), sp.csr_matrix(J45), sp.csr_matrix(J46), sp.csr_matrix(J47), sp.csr_matrix(J48)],
-                [sp.csr_matrix(J51), sp.csr_matrix(J52), sp.csr_matrix(J53), sp.csr_matrix(J54), sp.csr_matrix(J55), sp.csr_matrix(J56), sp.csr_matrix(J57), sp.csr_matrix(J58)],
-                [sp.csr_matrix(J61), sp.csr_matrix(J62), sp.csr_matrix(J63), sp.csr_matrix(J64), sp.csr_matrix(J65), sp.csr_matrix(J66), sp.csr_matrix(J67), sp.csr_matrix(J68)],
-                [sp.csr_matrix(J71), sp.csr_matrix(J72), sp.csr_matrix(J73), sp.csr_matrix(J74), sp.csr_matrix(J75), sp.csr_matrix(J76), sp.csr_matrix(J77), sp.csr_matrix(J78)],
-                [sp.csr_matrix(J81), sp.csr_matrix(J82), sp.csr_matrix(J83), sp.csr_matrix(J84), sp.csr_matrix(J85), sp.csr_matrix(J86), sp.csr_matrix(J87), sp.csr_matrix(J88)]
+                [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16)],
+                [sp.csr_matrix(J21), sp.csr_matrix(J22), sp.csr_matrix(J23), sp.csr_matrix(J24), sp.csr_matrix(J25), sp.csr_matrix(J26)],
+                [sp.csr_matrix(J31), sp.csr_matrix(J32), sp.csr_matrix(J33), sp.csr_matrix(J34), sp.csr_matrix(J35), sp.csr_matrix(J36)],
+                [sp.csr_matrix(J41), sp.csr_matrix(J42), sp.csr_matrix(J43), sp.csr_matrix(J44), sp.csr_matrix(J45), sp.csr_matrix(J46)],
+                [sp.csr_matrix(J51), sp.csr_matrix(J52), sp.csr_matrix(J53), sp.csr_matrix(J54), sp.csr_matrix(J55), sp.csr_matrix(J56)],
+                [sp.csr_matrix(J61), sp.csr_matrix(J62), sp.csr_matrix(J63), sp.csr_matrix(J64), sp.csr_matrix(J65), sp.csr_matrix(J66)]
                 ],format='csr')
     return J
 
@@ -739,7 +657,7 @@ NJ=NumericalJacobian(Uinnitalguess)
 if False:
     plt.figure();
     plt.title('Numericla Jacobian')
-    for j in range(1,8):
+    for j in range(1,6):
         if False:
             for x in np.where(NorthBoundary == 1)[0]: plt.axvline((j-1)*(Nx+1)*(Ny+1)+x,color='#4dff4d',linewidth=2)
             for y in np.where(NorthBoundary == 1)[0]: plt.axhline((j-1)*(Nx+1)*(Ny+1)+y,color='#4dff4d',linewidth=2)
@@ -836,14 +754,14 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
 # the run
     
 Ufinal=NewtonRapsonInnerloop(Uinnitalguess)
-zetas,zetac,us,uc,vs,vc,C,h=np.array_split(Ufinal,8)
+zetas,zetac,us,uc,vs,vc=np.array_split(Ufinal,6)
 
 Check=np.where(F(Ufinal)!=0)
 if Check[0].size>0 :
     print('\t ------- F=!0 ------- \t \n')
-    F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=np.array_split(F(Ufinal),8)
+    F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc=np.array_split(F(Ufinal),6)
     
-    fig, ((ax1,ax3,ax5,ax7),(ax2,ax4,ax6,ax8)) = plt.subplots(2,4)
+    fig, ((ax1,ax3,ax5),(ax2,ax4,ax6)) = plt.subplots(2,3)
     plt.suptitle('F(U)') 
     plt.gca().invert_yaxis()
     imgzetas = ax1.imshow(reshape(F_zetas))
@@ -874,17 +792,7 @@ if Check[0].size>0 :
     plt.gca().invert_yaxis()
     ax6.title.set_text('$F(vc)$')
     plt.colorbar(imgvc,orientation='horizontal',ax=ax6)
-    
-    imgC=ax7.imshow(reshape(F_C))
-    plt.gca().invert_yaxis()
-    ax7.title.set_text('$F(C)$')
-    plt.colorbar(imgC,orientation='horizontal',ax=ax7)
-    
-    imgh=ax8.imshow(reshape(F_h))
-    plt.gca().invert_yaxis()
-    ax8.title.set_text('$F(h)$')
-    plt.colorbar(imgh,orientation='horizontal',ax=ax8)
-    
+
 
 
 ''' the plots '''
@@ -947,38 +855,6 @@ def staticplots():
         
         plt.colorbar(imgvc,orientation='horizontal',ax=ax6)
      
-def Candhplots():
-        plt.ion()
-        plt.suptitle('Steady State bed, tidal average Concentration')
-                     
-        fig, ((ax1, ax2),(ax3, ax4),(ax5, ax6)) = plt.subplots(3, 2)
-        
-        # initialization of the movie figure
-        Carr = np.reshape(C,[Ny+1,Nx+1])
-        harr = np.reshape(h,[Ny+1,Nx+1])
-        
-
-        
-        imgC = ax1.imshow(Carr,extent=[0,Lx,Ly,0],interpolation='none',aspect='auto')
-        
-        ax1.title.set_text('C')
-        plt.gca().invert_yaxis()
-        
-        plt.colorbar(imgC,orientation='horizontal',ax=ax1)
-        
-        ax3.plot(Carr.mean(0))
-        ax5.plot(Carr.mean(1))
-        
-        imgh = ax2.imshow(harr,extent=[0,Lx,Ly,0],interpolation='none',aspect='auto')
-        
-        ax2.title.set_text('h')
-        plt.gca().invert_yaxis()
-        
-        plt.colorbar(imgh,orientation='horizontal',ax=ax2)
-        
-        ax4.plot(harr.mean(0))
-        ax6.plot(harr.mean(1))
-
 
 def Animation1():
         t = 0
