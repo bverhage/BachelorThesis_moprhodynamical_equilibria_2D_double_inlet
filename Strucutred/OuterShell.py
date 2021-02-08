@@ -28,7 +28,7 @@ P.printparamters()
 
 
 
-BOOL_Total_Model,BOOL_Only_Water_model,BOOL_Only_Concentration_model=False,True,False
+BOOL_Total_Model,BOOL_Only_Water_model,BOOL_Only_Concentration_model=True,False,False
 
 
 
@@ -67,7 +67,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
         Stopcondition=0
         
     
-    while False:#Stopcondition==1:
+    while Stopcondition==1:
          
          i+=1
          Check=TM.MaxNormOfU(TM.F(Uiend))
@@ -96,7 +96,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
              break
              
              
-         if i>=0:
+         if i>20:
             break
         
          zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uiend)

@@ -195,7 +195,7 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
     fus += P.NorthBoundary*(-us+P.fhat*vc-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas)
     
     
-    # ''' quick corner fix'''
+    ''' quick corner fix'''
     
     fus += P.NWCorner*( -us
                       -np.divide(P.r, 1-h)*uc
@@ -349,12 +349,12 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
     ''' west boundary '''
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
-    fC   +=  P.WestBoundary*(-P.epsilon*beta(h)*C+us*us+vs*vs+uc*uc+vc*vc)
+    fC   +=  P.WestBoundary*(-P.epsilon*beta(h)*C+us*us+vs*vs+uc*uc+vc*vc)#P.epsilon*P.a*P.k*P.lambda_d*(beta(h)*1/P.dx*(-I_xoffL*h+h)*1/P.dx*(-I_xoffL*C+C)+ C*(1/P.dx*(-I_xoffL*beta(h)+beta(h))*1/P.dx*(-I_xoffL*h+h) ))
                             
     #                         )
-    # ''' east boundary ''' 
+    ''' east boundary ''' 
 
-    fC   += P.EastBoundary*(-P.epsilon*beta(h)*C+us*us+vs*vs+uc*uc+vc*vc)
+    fC   += P.EastBoundary*(-P.epsilon*beta(h)*C+us*us+vs*vs+uc*uc+vc*vc)#P.epsilon*P.a*P.k*P.lambda_d*(beta(h)*1/P.dx*(-h+I_xoffR*h)*1/P.dx*(-C+I_xoffR*C)+ C*(1/P.dx*(-beta(h)+I_xoffR*beta(h))*1/P.dx*(-h+I_xoffR*h) ))
     #                          )
          
     ''' South Boundary '''

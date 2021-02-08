@@ -73,7 +73,7 @@ r_hat=8*U_const*CD/(3*np.pi)
 
 epsilon = A/H1
 
-r = -r_hat/(H1*sigma)
+r = r_hat/(H1*sigma)
 
 k = k_h/(Lx**2*sigma)#2.052*10**(-4)
 
