@@ -11,8 +11,8 @@ import numpy as np
  
 ''' Model pramters ''' 
 
-Nx = 40+1                # interior points + 1
-Ny = int((Nx-1)*1/2)+1
+Nx = 30+1                # interior points + 1
+Ny = int((Nx-1)*1/3)+1
 
 dx = 1/Nx
 dy = 1/Ny
@@ -20,7 +20,7 @@ dy = 1/Ny
     
 '''  System Parameters '''
 
-Lx = 1*59*10**3 # [ m ]
+Lx = 59*10**3 # [ m ]
 
 Ly =10**3 # [ m ]
 

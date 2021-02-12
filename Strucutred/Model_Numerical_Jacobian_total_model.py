@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 def split(U):
     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
-    return zetas,zetac,us,uc,vs,vc
+    return zetas,zetac,us,uc,vs,vc,C,h
 
 def split_animation(U):
     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
@@ -78,25 +78,41 @@ def NumericalJacobian(U):
     J81=np.zeros(I.shape);J82=np.zeros(I.shape);J83=np.zeros(I.shape);J84=np.zeros(I.shape);J85=np.zeros(I.shape);J86=np.zeros(I.shape);J87=np.zeros(I.shape);J88=np.zeros(I.shape);
     
     for i in tqdm(range(0,(P.Nx+1)*(P.Ny+1))):
-        h_small=1e-8*I.toarray()[:,i]
+        h_small=1e-10*I.toarray()[:,i]
         
         for NJ_func in {func.Fzetas,func.Fzetac,func.Fus,func.Fuc,func.Fvs,func.Fvc,func.FC,func.Fh}:
             if NJ_func == func.Fzetas:
-                J1=J11;     J2=J12;     J3=J13;     J4=J14;     J5=J15;     J6=J16;     J7=J17;     J8=J18;
+                #zetas       zetac       us           uc           vs           vc           C             h
+                J1=J11;      J2=J12;     J3=J13;      J4=J14;      J5=J15;      J6=J16;      J7=J17;      J8=J18;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;
             if NJ_func == func.Fzetac:
+                #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J21;     J2=J22;     J3=J23;     J4=J24;     J5=J25;     J6=J26;     J7=J27;     J8=J28;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=False;BOOL_8=True;
             if NJ_func == func.Fus:
+                #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J31;     J2=J32;     J3=J33;     J4=J34;     J5=J35;     J6=J36;     J7=J37;     J8=J38;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;
             if NJ_func == func.Fuc:
+                #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J41;     J2=J42;     J3=J43;     J4=J44;     J5=J45;     J6=J46;     J7=J47;     J8=J48;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;
             if NJ_func == func.Fvs:
+                #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J51;     J2=J52;     J3=J53;     J4=J54;     J5=J55;     J6=J56;     J7=J57;     J8=J58;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;
             if NJ_func == func.Fvc:
+                #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J61;     J2=J62;     J3=J63;     J4=J64;     J5=J65;     J6=J66;     J7=J67;     J8=J68;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;
             if NJ_func == func.FC:
+                #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J71;     J2=J72;     J3=J63;     J4=J74;     J5=J75;     J6=J76;     J7=J77;     J8=J78;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;               
             if NJ_func == func.Fh:
+                #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J81;     J2=J82;     J3=J83;     J4=J84;     J5=J85;     J6=J86;     J7=J87;     J8=J88;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;
                 
             # J1[:,i] = np.array([(NJ_func(zetas+h_small,zetac,us,uc,vs,vc)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc))/(2*np.linalg.norm(h_small))]).T
             # J2[:,i] = np.array([(NJ_func(zetas,zetac+h_small,us,uc,vs,vc)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc))/(2*np.linalg.norm(h_small))]).T
@@ -125,11 +141,6 @@ def NumericalJacobian(U):
                 ],format='csr')
     return J
 
-
-
-def split(Ufinal):
-    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(Ufinal,8)
-    return zetas,zetac,us,uc,vs,vc,C,h
 
 
 def plotjacobian(NJ,BOOL=False):
