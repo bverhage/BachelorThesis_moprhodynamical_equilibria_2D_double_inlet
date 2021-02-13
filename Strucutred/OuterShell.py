@@ -20,7 +20,7 @@ if True:
     
 P.printparamters()  
 
-BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = False,True,False
+BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = True,False,False
 
 
 
@@ -29,7 +29,7 @@ if BOOL_Total_Model:
     import Model_Numerical_Jacobian_concentration_model as TM_con
     Uinnitalguess_con = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0))
     
-    print('\t ====Morphodynamical model====\n')
+    print('\n \t ====Morphodynamical model====\n \t creating initial condition \n')
     
     #DeltaU=la.spsolve(TM_con.NumericalJacobian(Uinnitalguess_con),TM_con.F(Uinnitalguess_con))
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
@@ -74,7 +74,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     DeltaU=la.spsolve(NJ,TM.F(Uiend))
     Uiend=Uiend-DeltaU
 
-    print('\t Newton Rapson loop \n i=0 \t ||F(U)|| = %.2e < %.2e \n ' %(TM.MaxNormOfU(TM.F(Uiend)),epsilon))
+    print('\t Newton Rapson loop \n i=0 \t ||F(U)||_max = %.2e < %.2e \n ' %(TM.MaxNormOfU(TM.F(Uiend)),epsilon))
     F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Uiend))
     print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
     
@@ -95,7 +95,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
              break 
          
          if Check<=epsilon:
-             print('\t Newton Rapson loop stoped at \n i=%i \t ||F(U)|| = %.2e < %.2e\n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
+             print('\t Newton Rapson loop stoped at \n i=%i \t ||F(U)||_max = %.2e < %.2e\n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
              print ('\n')
              Stopcondition=0
              break
@@ -105,7 +105,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
              Stopcondition=1
              DeltaU=la.spsolve(TM.NumericalJacobian(Uiend),TM.F(Uiend))
              Uiend=Uiend-DeltaU
-             print('\t Newton Rapson loop \n i=%i \t ||F(U)|| = %.2e < %.2e \n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
+             print('\t Newton Rapson loop \n i=%i \t ||F(U)||_max = %.2e < %.2e \n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
          zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uiend)
          
          F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Uiend))
@@ -126,7 +126,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
             break    
 
          elif Check<=epsilon:
-             print('\t Newton Rapson loop stoped at \n i=%i \t ||F(U)|| = %.2e < %.2e\n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
+             print('\t Newton Rapson loop stoped at \n i=%i \t ||F(U)||_max = %.2e < %.2e\n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
              print ('\n')
              Stopcondition=0
              break

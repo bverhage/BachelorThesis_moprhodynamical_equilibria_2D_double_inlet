@@ -11,8 +11,8 @@ import numpy as np
  
 ''' Model pramters ''' 
 
-Nx = 30+1                # interior points + 1
-Ny = int((Nx-1)*1/3)+1
+Nx = 60+1                # interior points + 1
+Ny = int((Nx-1)*1/2)+1
 
 dx = 1/Nx
 dy = 1/Ny

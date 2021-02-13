@@ -84,6 +84,57 @@ if True:
         
         Ans = sp.kron(LYY,sp.eye(Nx+1))+sp.kron(sp.eye(Ny+1),LXX)
         return Ans
+    
+   def FDLaplacian2D_xbackward_ybackward(Nx,Ny,dx,dy):
+
+        diagonalsx = [-1*np.ones((1,Nx-1)),2*np.ones((1,Nx)),-1*np.ones((1,Nx+1))]
+        diagonalsy = [-1*np.ones((1,Ny-1)),2*np.ones((1,Ny)),-1*np.ones((1,Ny+1))]
+        
+        LXX =1/(dx**2)*sp.diags(diagonalsx, [-2,-1,0], shape=(Nx+1,Nx+1))
+        LYY =1/(dy**2)*sp.diags(diagonalsy, [-2,-1,0], shape=(Ny+1,Ny+1))
+        
+        Ans = sp.kron(LYY,sp.eye(Nx+1))+sp.kron(sp.eye(Ny+1),LXX)
+        return Ans
+    
+   def FDLaplacian2D_xforward_ybackward(Nx,Ny,dx,dy):
+
+        diagonalsx = [-1*np.ones((1,Nx-1)),2*np.ones((1,Nx)),-1*np.ones((1,Nx+1))]
+        diagonalsy = [-1*np.ones((1,Ny-1)),2*np.ones((1,Ny)),-1*np.ones((1,Ny+1))]
+        
+        LXX =1/(dx**2)*sp.diags(diagonalsx, [-2,-1,0], shape=(Nx+1,Nx+1))
+        LYY =1/(dy**2)*sp.diags(diagonalsy, [-2,-1,0], shape=(Ny+1,Ny+1))
+        
+        LXX=LXX.T
+        
+        Ans = sp.kron(LYY,sp.eye(Nx+1))+sp.kron(sp.eye(Ny+1),LXX)
+        return Ans
+    
+   def FDLaplacian2D_xbackward_yforward(Nx,Ny,dx,dy):
+
+        diagonalsx = [-1*np.ones((1,Nx-1)),2*np.ones((1,Nx)),-1*np.ones((1,Nx+1))]
+        diagonalsy = [-1*np.ones((1,Ny-1)),2*np.ones((1,Ny)),-1*np.ones((1,Ny+1))]
+        
+        LXX =1/(dx**2)*sp.diags(diagonalsx, [-2,-1,0], shape=(Nx+1,Nx+1))
+        LYY =1/(dy**2)*sp.diags(diagonalsy, [-2,-1,0], shape=(Ny+1,Ny+1))
+        
+        LYY=LYY.T
+        
+        Ans = sp.kron(LYY,sp.eye(Nx+1))+sp.kron(sp.eye(Ny+1),LXX)
+        return Ans
+    
+   def FDLaplacian2D_xforward_yforward(Nx,Ny,dx,dy):
+
+        diagonalsx = [-1*np.ones((1,Nx-1)),2*np.ones((1,Nx)),-1*np.ones((1,Nx+1))]
+        diagonalsy = [-1*np.ones((1,Ny-1)),2*np.ones((1,Ny)),-1*np.ones((1,Ny+1))]
+        
+        LXX =1/(dx**2)*sp.diags(diagonalsx, [-2,-1,0], shape=(Nx+1,Nx+1))
+        LYY =1/(dy**2)*sp.diags(diagonalsy, [-2,-1,0], shape=(Ny+1,Ny+1))
+        
+        LXX=LXX.T
+        LYY=LYY.T
+        
+        Ans = sp.kron(LYY,sp.eye(Nx+1))+sp.kron(sp.eye(Ny+1),LXX)
+        return Ans
    def LX(Nx,Ny,dx,dy):
         
         diagonalsx = [-1*np.ones((1,Nx)),np.ones((1,Nx))]
@@ -164,9 +215,15 @@ LyD  =  LY(P.Nx,P.Ny,P.dx,P.dy)
 
 A_xy   =  FDLaplacian2D(P.Nx,P.Ny,P.dx,P.dy)
 A_xy_yf = FDLaplacian2D_yforward(P.Nx,P.Ny,P.dx,P.dy)
-A_xy_yb = FDLaplacian2D_ybackward(P.Nx,P.Ny,P.dx,P.dy)
+A_xy_yb = FDLaplacian2D_yforward(P.Nx,P.Ny,P.dx,P.dy).T
 A_xy_xf = FDLaplacian2D_xforward(P.Nx,P.Ny,P.dx,P.dy)
-A_xy_xb = FDLaplacian2D_xbackward(P.Nx,P.Ny,P.dx,P.dy)
+A_xy_xb = FDLaplacian2D_xforward(P.Nx,P.Ny,P.dx,P.dy).T
+
+
+A_xy_xf_yf = FDLaplacian2D_xforward_yforward(P.Nx,P.Ny,P.dx,P.dy)
+A_xy_xb_yf = FDLaplacian2D_xbackward_yforward(P.Nx,P.Ny,P.dx,P.dy)
+A_xy_xf_yb = FDLaplacian2D_xforward_ybackward(P.Nx,P.Ny,P.dx,P.dy)
+A_xy_xb_yb = FDLaplacian2D_xbackward_ybackward(P.Nx,P.Ny,P.dx,P.dy)
 
 I = sp.eye((P.Ny+1)*(P.Nx+1))
 
@@ -222,14 +279,14 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
     'y=0' 
     fzetas += P.SouthBoundary*(
                                 -zetas-(1-h)*(LxD*uc+LyD_f*vc*0)+uc*(LxD*h)+0*vc*(LyD_f*h)
-                                )#*LyD_f*zetas
+                                )
 
     
     ''' North Boundary ''' 
     'y=1'
     fzetas += P.NorthBoundary*(
                                 -zetas-(1-h)*(LxD*uc+LyD_b*vc*0)+uc*(LxD*h)+0*vc*(LyD_b*h)
-                                )#LyD_b*zetas
+                                )
 
 
     ''' quick corner fix'''
@@ -257,11 +314,15 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
                             )
     ''' South Boundary '''
     'y=0' 
-    fzetac += P.SouthBoundary*(-zetac+(1-h)*(LxD*us+LyD_f*vs*0)-us*(LxD*h)-0*vs*(LyD_f*h))#LyD_f*zetac
+    fzetac += P.SouthBoundary*(
+                                -zetac+(1-h)*(LxD*us+LyD_f*vs*0)-us*(LxD*h)-0*vs*(LyD_f*h)
+                                )
     
     ''' North Boundary ''' 
     'y=1' 
-    fzetac += P.NorthBoundary*(-zetac+(1-h)*(LxD*us+LyD_b*vs*0)-us*(LxD*h)-0*vs*(LyD_b*h))#LyD_b*zetac
+    fzetac += P.NorthBoundary*(
+                               -zetac+(1-h)*(LxD*us+LyD_b*vs*0)-us*(LxD*h)-0*vs*(LyD_b*h)
+                               )#LyD_b*zetac
 
     ''' quick corner fix'''
     
@@ -272,7 +333,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
 
 def Fus(zetas,zetac,us,uc,vs,vc,C,h):
     ''' interior '''
-    fus   = -us +P.fhat*vc-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas
+    fus   = -us -np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas
     
     fus = P.Interior*fus
     
@@ -281,17 +342,13 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
     fus   +=  P.WestBoundary*(
-                            -us
-                            +P.fhat*vc
-                            -np.divide(P.r, 1-h)*uc
-                            -P.lambda_L**(2)*(LxD_f*zetas)
+                            -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*(LxD_f*zetas)
                             )
     ''' east boundary ''' 
     'x=1' 
 
     fus += P.EastBoundary*(
                              -us
-                             +P.fhat*vc
                              -np.divide(P.r, 1-h)*uc
                              -P.lambda_L**(2)*(LxD_b*zetas)
                              )
@@ -299,11 +356,15 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
          
     ''' South Boundary '''
     'y=0' 
-    fus += P.SouthBoundary*(-us+P.fhat*vc-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas)
+    fus += P.SouthBoundary*(
+                            -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas
+                            )
     
     ''' North Boundary ''' 
     'y=1' 
-    fus += P.NorthBoundary*(-us+P.fhat*vc-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas)
+    fus += P.NorthBoundary*(
+                            -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas
+                            )
     
     
     ''' quick corner fix'''
@@ -311,28 +372,28 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
     fus += P.NWCorner*(
                       -us
                       -np.divide(P.r, 1-h)*uc
-                      -P.lambda_L**(2)*(LxD_f*zetas)#*1/P.dx*(-0 +I_xoffR*zetas)
+                      -P.lambda_L**(2)*(LxD_f*zetas)
                       )
     fus += P.SWCorner*(
                       -us
                       -np.divide(P.r, 1-h)*uc
-                      -P.lambda_L**(2)*(LxD_f*zetas))#1/P.dx*(-0 +I_xoffR*zetas))
+                      -P.lambda_L**(2)*(LxD_f*zetas))
     
     fus += P.NECorner*(
                       -us
                       -np.divide(P.r, 1-h)*uc
-                      -P.lambda_L**(2)*(LxD_b*zetas)#1/P.dx*(-I_xoffL*zetas +P.Atilde*np.sin(P.phi))
+                      -P.lambda_L**(2)*(LxD_b*zetas)
                       )
     fus += P.SECorner*(
                       -us
                       -np.divide(P.r, 1-h)*uc
-                      -P.lambda_L**(2)*(LxD_b*zetas)#1/P.dx*(-I_xoffL*zetas +P.Atilde*np.sin(P.phi))
+                      -P.lambda_L**(2)*(LxD_b*zetas)
                       )
     return fus
          
 def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
     ''' interior '''
-    fuc   = -uc -P.fhat*vs +np.divide(P.r, 1-h)*us +P.lambda_L**(2)*LxD*zetac
+    fuc   = -uc  +np.divide(P.r, 1-h)*us +P.lambda_L**(2)*LxD*zetac
     
     fuc = P.Interior*fuc 
     
@@ -341,69 +402,62 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
     fuc     +=  P.WestBoundary*(
-                                -uc
-                                -P.fhat*vs
-                                +np.divide(P.r, 1-h)*us
-                                
-                                +P.lambda_L**(2)*LxD_f*zetac#1/P.dx*( -1 +I_xoffR*zetac)
+                                -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD_f*zetac
                                 )
                             
     ''' east boundary '''
     'x=1' 
 
     fuc += P.EastBoundary*(
-                         -uc
-                         -P.fhat*vs
-                         +np.divide(P.r, 1-h)*us
-                         +P.lambda_L**(2)*LxD_b*zetac#1/P.dx*( -I_xoffL*zetac  + P.Atilde*np.cos(P.phi))
+                         -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD_b*zetac
                         )
 
     ''' South Boundary '''
     'y=0' 
-    fuc += P.SouthBoundary*(-uc-P.fhat*vs*0+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD*zetac)
+    fuc += P.SouthBoundary*(
+                            -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD*zetac
+                            )
     
     ''' North Boundary ''' 
     'y=1' 
-    fuc += P.NorthBoundary*(-uc-P.fhat*vs*0+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD*zetac)
+    fuc += P.NorthBoundary*(
+                            -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD*zetac
+                            )
     
     # ''' quick corner fix'''
     
-    fuc += P.NWCorner*( -uc 
-                      +np.divide(P.r, 1-h)*us
-                      +P.lambda_L**(2)*LxD_f*zetac#*1/P.dx*(-1 + I_xoffR*zetac)
+    fuc += P.NWCorner*( 
+                      -uc + np.divide(P.r, 1-h)*us + P.lambda_L**(2)*LxD_f*zetac
                       )
     
-    fuc += P.SWCorner*( -uc
-                        +np.divide(P.r, 1-h)*us
-                        +P.lambda_L**(2)*LxD_f*zetac#*1/P.dx*(-1 +I_xoffR*zetac)
+    fuc += P.SWCorner*( 
+                        -uc + np.divide(P.r, 1-h)*us + P.lambda_L**(2)*LxD_f*zetac
                         )
     
-    fuc += P.NECorner*(-uc
-                      +np.divide(P.r, 1-h)*us
-                      +P.lambda_L**(2)*LxD_b*zetac#1/P.dx*(-I_xoffL*zetac  + P.Atilde*np.cos(P.phi))
+    fuc += P.NECorner*(
+                      -uc + np.divide(P.r, 1-h)*us + P.lambda_L**(2)*LxD_b*zetac
                       )
-    fuc += P.SECorner*(-uc
-                      +np.divide(P.r, 1-h)*us
-                      +P.lambda_L**(2)*LxD_b*zetac#*1/P.dx*(-I_xoffL*zetac  + P.Atilde*np.cos(P.phi))
+    fuc += P.SECorner*(
+                      -uc + np.divide(P.r, 1-h)*us + P.lambda_L**(2)*LxD_b*zetac
                       )
     #fuc += cornerfix(uc)
     return fuc
 
 def Fvs(zetas,zetac,us,uc,vs,vc,C,h):
     ''' interior '''
-    fvs   = -vs -P.fhat*uc -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD*zetas
+    fvs   = -vs  -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD*zetas
     
     fvs = P.Interior*fvs
     
     ''' west boundary '''
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
-    fvs   +=  P.WestBoundary*(-vs-P.fhat*uc -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD*zetas)
+    fvs   +=  P.WestBoundary*(-vs -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD*zetas)
                             
     #                         )
     # ''' east boundary ''' 
 
-    fvs += P.EastBoundary*(-vs-P.fhat*uc -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD*zetas)
+    fvs += P.EastBoundary*(-vs -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD*zetas)
     #                          )
          
     ''' South Boundary '''
@@ -413,13 +467,13 @@ def Fvs(zetas,zetac,us,uc,vs,vc,C,h):
     fvs += P.NorthBoundary*(-vs+0)
     ''' quick corner fix'''
     
-    fvs += P.NWCorner*(-vs-P.fhat*uc -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_b*zetas)
+    fvs += P.NWCorner*(-vs -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_b*zetas)
     
-    fvs += P.SWCorner*(-vs-P.fhat*uc -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_f*zetas)
+    fvs += P.SWCorner*(-vs -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_f*zetas)
     
-    fvs += P.NECorner*(-vs-P.fhat*uc -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_b*zetas)
+    fvs += P.NECorner*(-vs -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_b*zetas)
     
-    fvs += P.SECorner*(-vs-P.fhat*uc -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_f*zetas)
+    fvs += P.SECorner*(-vs -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD_f*zetas)
     return fvs
 
 def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
@@ -431,12 +485,14 @@ def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
     ''' west boundary '''
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
-    fvc   +=  P.WestBoundary*(-vc+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD*zetac)
+    fvc   +=  P.WestBoundary*(
+                            -vc+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD*zetac
+                            )
                             
     #                         )
     ''' east boundary ''' 
 
-    fvc += P.EastBoundary*(-vc+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD*zetac)
+    fvc += P.EastBoundary*(-vc+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD*zetac)
     #                          )
          
     ''' South Boundary '''
@@ -447,13 +503,13 @@ def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
     
     # ''' quick corner fix'''
     
-    fvc += P.NWCorner*(-vc)#+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_b*zetac)
+    fvc += P.NWCorner*(-vc+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_b*zetac)
     
-    fvc += P.SWCorner*(-vc)#+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_f*zetac)
+    fvc += P.SWCorner*(-vc+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_f*zetac)
     
-    fvc += P.NECorner*(-vc)#+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_b*zetac)
+    fvc += P.NECorner*(-vc+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_b*zetac)
     
-    fvc += P.SECorner*(-vc)#+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_f*zetac)
+    fvc += P.SECorner*(-vc+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_f*zetac)
     return fvc
 
 def FC(zetas,zetac,us,uc,vs,vc,C,h):
@@ -473,7 +529,7 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
     ' Lx => Lx_f  '
     ' A_xy => A_xy_xf '
     fC   +=  P.WestBoundary*(
-                            0*P.a*P.k*(
+                            P.a*P.k*(
                             A_xy_xf*C + P.lambda_d*(
                                                 C*(LxD_f*beta(h)*LxD_f*h + LyD*beta(h)*LyD*h)
                                                 + beta(h)*(LxD_f*h*LxD_f*C+LyD*h*LyD*C)
@@ -486,7 +542,7 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
     ''' east boundary ''' 
 
     fC   += P.EastBoundary*(
-                            0*P.a*P.k*(
+                            P.a*P.k*(
                             A_xy_xb*C + P.lambda_d*(
                                                 C*(LxD_b*beta(h)*LxD_b*h + LyD*beta(h)*LyD*h)
                                                 + beta(h)*(LxD_b*h*LxD_b*C+LyD*h*LyD*C)
@@ -516,21 +572,57 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
     
     # ''' quick corner fix'''
     
-    fC += P.NWCorner*(-1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0))
+    fC += P.NWCorner*(P.a*P.k*(
+                            A_xy_xf_yb*C + P.lambda_d*(
+                                                C*(LxD_f*beta(h)*LxD_f*h + LyD_b*beta(h)*LyD_b*h)
+                                                + beta(h)*(LxD_f*h*LxD_f*C+LyD_b*h*LyD_b*C)
+                                                +C*beta(h)*A_xy_xf_yb*h
+                                                )
+                            )
+                            -1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0)
+                            )
     
-    fC += P.SWCorner*(-1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0))
+    fC += P.SWCorner*(P.a*P.k*(
+                            A_xy_xf_yf*C + P.lambda_d*(
+                                                C*(LxD_f*beta(h)*LxD_f*h + LyD_f*beta(h)*LyD_f*h)
+                                                + beta(h)*(LxD_f*h*LxD_f*C+LyD_f*h*LyD_f*C)
+                                                +C*beta(h)*A_xy_xf_yf*h
+                                                )
+                            )
+                            -1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0)
+                            )
     
-    fC += P.NECorner*(-1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0))
+    fC += P.NECorner*(P.a*P.k*(
+                            A_xy_xb_yb*C + P.lambda_d*(
+                                                C*(LxD_b*beta(h)*LxD_b*h + LyD_b*beta(h)*LyD_b*h)
+                                                + beta(h)*(LxD_b*h*LxD_b*C+LyD_b*h*LyD_b*C)
+                                                +C*beta(h)*A_xy_xb_yb*h
+                                                )
+                            )
+                            -1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0)
+                            )
     
-    fC += P.SECorner*(-1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0))
+    fC += P.SECorner*(P.a*P.k*(
+                            A_xy_xb_yf*C + P.lambda_d*(
+                                                C*(LxD_b*beta(h)*LxD_b*h + LyD_f*beta(h)*LyD_f*h)
+                                                + beta(h)*(LxD_b*h*LxD_b*C+LyD_f*h*LyD_f*C)
+                                                +C*beta(h)*A_xy_xb_yf*h
+                                                )
+                            )
+                            -1*beta(h)*C+0.5*(us*us+vs*vs*0+uc*uc+vc*vc*0)
+                            )
     return fC
 
 def Fh(zetas,zetac,us,uc,vs,vc,C,h):
     ''' interior '''
     fh  = -P.Mutilde*A_xy*h
-    fh += -P.delta_s*(-beta(h)*C+0.5*(us*us+vs*vs+uc*uc+vc*vc))
-
- #
+    fh  +=-10**(-5)*P.delta_s*P.a*P.k*(
+                            A_xy*C + P.lambda_d*(
+                                                C*(LxD*beta(h)*LxD*h + LyD*beta(h)*LyD*h)
+                                                + beta(h)*(LxD*h*LxD*C+LyD*h*LyD*C)
+                                                +C*beta(h)*A_xy*h
+                                                )
+                            )
     
     fh = P.Interior*fh
     
@@ -546,10 +638,25 @@ def Fh(zetas,zetac,us,uc,vs,vc,C,h):
     #                          )
          
     ''' South Boundary '''
-    fh += P.SouthBoundary*(-P.Mutilde*A_xy_yf*h-P.delta_s*(-beta(h)*C+0.5*(us*us+0*vs*vs+uc*uc+0*vc*vc)))
+    fh += P.SouthBoundary*(-P.Mutilde*A_xy_yf*h
+                           -10**(-5)*P.delta_s*P.a*P.k*(
+                            A_xy_yf*C + P.lambda_d*(
+                                                C*(LxD*beta(h)*LxD*h + LyD_f*beta(h)*LyD_f*h)
+                                                + beta(h)*(LxD*h*LxD*C+LyD_f*h*LyD_f*C)
+                                                +C*beta(h)*A_xy_yf*h
+                                                )
+                            ))
     
     ''' North Boundary ''' 
-    fh += P.NorthBoundary*(-P.Mutilde*A_xy_yb*h-P.delta_s*(-beta(h)*C+0.5*(us*us+0*vs*vs+uc*uc+0*vc*vc)))
+    fh += P.NorthBoundary*(-P.Mutilde*A_xy_yb*h
+                           -10**(-5)*P.delta_s*P.a*P.k*(
+                            A_xy_yb*C + P.lambda_d*(
+                                                C*(LxD*beta(h)*LxD*h + LyD_b*beta(h)*LyD_b*h)
+                                                + beta(h)*(LxD*h*LxD*C+LyD_b*h*LyD_b*C)
+                                                +C*beta(h)*A_xy_yb*h
+                                                )
+                            )
+                           )
     
     # ''' quick corner fix'''
     
