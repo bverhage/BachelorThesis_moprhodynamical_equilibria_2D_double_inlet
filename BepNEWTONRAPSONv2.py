@@ -19,6 +19,7 @@ if True:
     
     #import scipy.fftpack
     ## just some code to mange the open plt windows
+    
     plt.close("all")
     
 if True:

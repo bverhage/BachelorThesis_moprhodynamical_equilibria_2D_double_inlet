@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import Model_functions as func
 import Model_parameters as P
 
+import Model_Analytical_Jacobian_total_model as ANALYTICAL
+
 from tqdm import tqdm 
 
 def split(U):
@@ -66,8 +68,13 @@ def NumericalJacobian(U):
     # J51=sp.csr_matrix(I.shape);J52=sp.csr_matrix(I.shape);J53=sp.csr_matrix(I.shape);J54=sp.csr_matrix(I.shape);J55=sp.csr_matrix(I.shape);J56=sp.csr_matrix(I.shape);
     # J61=sp.csr_matrix(I.shape);J62=sp.csr_matrix(I.shape);J63=sp.csr_matrix(I.shape);J64=sp.csr_matrix(I.shape);J65=sp.csr_matrix(I.shape);J66=sp.csr_matrix(I.shape);
 
-
-
+    
+    # J11,J12,J13,J14,J15,J16,J17,J18 = ANALYTICAL.AnalyticalJacobian_zetas(U)
+    # J21,J22,J23,J24,J25,J26,J27,J28 = ANALYTICAL.AnalyticalJacobian_zetac(U)
+    # J31,J32,J33,J34,J35,J36,J37,J38 = ANALYTICAL.AnalyticalJacobian_us(U)
+    # J41,J42,J43,J44,J45,J46,J47,J48 = ANALYTICAL.AnalyticalJacobian_uc(U)
+    # J51,J52,J53,J54,J55,J56,J57,J58 = ANALYTICAL.AnalyticalJacobian_vs(U)
+    # J61,J62,J63,J64,J65,J66,J67,J68 = ANALYTICAL.AnalyticalJacobian_vc(U)
     J11=np.zeros(I.shape);J12=np.zeros(I.shape);J13=np.zeros(I.shape);J14=np.zeros(I.shape);J15=np.zeros(I.shape);J16=np.zeros(I.shape);J17=np.zeros(I.shape);J18=np.zeros(I.shape);
     J21=np.zeros(I.shape);J22=np.zeros(I.shape);J23=np.zeros(I.shape);J24=np.zeros(I.shape);J25=np.zeros(I.shape);J26=np.zeros(I.shape);J27=np.zeros(I.shape);J28=np.zeros(I.shape);
     J31=np.zeros(I.shape);J32=np.zeros(I.shape);J33=np.zeros(I.shape);J34=np.zeros(I.shape);J35=np.zeros(I.shape);J36=np.zeros(I.shape);J37=np.zeros(I.shape);J38=np.zeros(I.shape);
@@ -88,7 +95,7 @@ def NumericalJacobian(U):
             if NJ_func == func.Fzetac:
                 #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J21;     J2=J22;     J3=J23;     J4=J24;     J5=J25;     J6=J26;     J7=J27;     J8=J28;
-                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=False;BOOL_8=True;
+                BOOL_1=True;BOOL_2=True;BOOL_3=True;BOOL_4=True;BOOL_5=True;BOOL_6=True;BOOL_7=True;BOOL_8=True;
             if NJ_func == func.Fus:
                 #zetas      zetac       us          uc          vs           vc          C           h
                 J1=J31;     J2=J32;     J3=J33;     J4=J34;     J5=J35;     J6=J36;     J7=J37;     J8=J38;
@@ -120,14 +127,14 @@ def NumericalJacobian(U):
             # J4[:,i] = np.array([(NJ_func(zetas,zetac,us,uc+h_small,vs,vc)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc))/(2*np.linalg.norm(h_small))]).T
             # J5[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs+h_small,vc)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc))/(2*np.linalg.norm(h_small))]).T
             # J6[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs,vc+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small))/(2*np.linalg.norm(h_small))]).T
-            J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc,C,h)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc,C,h)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc,C,h)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc,C,h)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc,C,h)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc,C,h))/(2*np.linalg.norm(h_small))
-            J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small,C,h)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small,C,h))/(2*np.linalg.norm(h_small))
-            J7[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C+h_small,h)-NJ_func(zetas,zetac,us,uc,vs,vc,C-h_small,h))/(2*np.linalg.norm(h_small))
-            J8[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C,h+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc,C,h-h_small))/(2*np.linalg.norm(h_small))
+            if BOOL_1: J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc,C,h)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
+            if BOOL_2: J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc,C,h)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
+            if BOOL_3: J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc,C,h)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
+            if BOOL_4: J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc,C,h)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc,C,h))/(2*np.linalg.norm(h_small))
+            if BOOL_5: J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc,C,h)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc,C,h))/(2*np.linalg.norm(h_small))
+            if BOOL_6: J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small,C,h)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small,C,h))/(2*np.linalg.norm(h_small))
+            if BOOL_7: J7[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C+h_small,h)-NJ_func(zetas,zetac,us,uc,vs,vc,C-h_small,h))/(2*np.linalg.norm(h_small))
+            if BOOL_8: J8[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C,h+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc,C,h-h_small))/(2*np.linalg.norm(h_small))
          
     J=sp.bmat([
                 [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16), sp.csr_matrix(J17), sp.csr_matrix(J18)],

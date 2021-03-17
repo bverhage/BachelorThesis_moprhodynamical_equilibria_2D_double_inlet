@@ -11,8 +11,8 @@ import numpy as np
  
 ''' Model pramters ''' 
 
-Nx = 60+1                # interior points + 1
-Ny = int((Nx-1)*1/2)+1
+Nx = 40+1                # interior points + 1
+Ny = 3+1#int((Nx-1)*1/4)+1
 
 dx = 1/Nx
 dy = 1/Ny
@@ -20,9 +20,9 @@ dy = 1/Ny
     
 '''  System Parameters '''
 
-Lx = 59*10**3 # [ m ]
+Lx = 60*10**3 # [ m ]
 
-Ly =10**3 # [ m ]
+Ly = 1*10**3 # [ m ]
 
 g = 9.81 # [ m/s^2 ]
 
@@ -33,19 +33,19 @@ sigma = 1.4*10**-4 #[1/s]
 fhat = 0#7.1*10**-1 # [ - ]
 
 ''' Inlets '''
-''' Mars diep inlet''' 
+''' Marsdiep inlet''' 
 
-H1 = 12 # [ m ]
-A = 0.74 # [ m ]
+H1 = 11.7 # [ m ]
+A = 0.62 # [ m ]
 
 ''' Vlie inlet''' 
-H2 = 6 # [ m ]
+H2 = H1 # 11.9 # [ m ]
 
-A2=0.84 # [ m ]
+A2 = A # 0.77 # [ m ]
 
 Atilde = A2/A  # [ - ]
 
-phi = 41/180*np.pi # [ - ]
+phi = 1/180*np.pi # #54 [ - ]
 
 
 '''  Sediment  Parameters '''

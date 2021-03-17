@@ -15,6 +15,7 @@ if True:
     import matplotlib.animation as animation
  
     import Model_parameters as P
+    import Model_functions as F
 
     plt.close("all")
     
@@ -26,10 +27,10 @@ BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = True,Fa
 
 if BOOL_Total_Model:
     import Model_Numerical_Jacobian_total_model as TM
-    import Model_Numerical_Jacobian_concentration_model as TM_con
-    Uinnitalguess_con = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0))
+    #import Model_Numerical_Jacobian_concentration_model as TM_con
+    #Uinnitalguess_con = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0))
     
-    print('\n \t ====Morphodynamical model====\n \t creating initial condition \n')
+    print('\n \t ====Morphodynamical model====\n')
     
     #DeltaU=la.spsolve(TM_con.NumericalJacobian(Uinnitalguess_con),TM_con.F(Uinnitalguess_con))
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
@@ -61,11 +62,10 @@ NJ=TM.NumericalJacobian(Uinnitalguess)
 
 
 
-
-
 def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
+    global NJ
     print('\n \t  Starting Newton Rapson Method \t \n')
-    epsilon=10**(-10)
+    epsilon=10**(-5)
     
     Uiend=np.copy(Uinnitalguess)
     
@@ -103,7 +103,8 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
          elif Check>epsilon and Check<10**(20)*epsilon:
 
              Stopcondition=1
-             DeltaU=la.spsolve(TM.NumericalJacobian(Uiend),TM.F(Uiend))
+             NJ=TM.NumericalJacobian(Uiend)
+             DeltaU=la.spsolve(NJ,TM.F(Uiend))
              Uiend=Uiend-DeltaU
              print('\t Newton Rapson loop \n i=%i \t ||F(U)||_max = %.2e < %.2e \n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
          zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uiend)
@@ -132,7 +133,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
              break
              
              
-         if i>10:
+         if i>20:
             break
         
 
@@ -197,6 +198,50 @@ if Check[0].size>0 :
 
 
 ''' the plots '''
+def  generictotalplot(Ufinal):
+    F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Ufinal))
+    fig, ((ax1,ax3,ax5,ax7),(ax2,ax4,ax6,ax8)) = plt.subplots(2,4)
+    plt.suptitle('total plot') 
+    plt.gca().invert_yaxis()
+    imgzetas = ax1.imshow(P.reshape(F_zetas))
+    ax1.title.set_text('$\zeta^{s}$')
+    plt.colorbar(imgzetas,orientation='horizontal',ax=ax1)
+    
+    imgzetac = ax2.imshow(P.reshape(F_zetac))
+    plt.gca().invert_yaxis()
+    ax2.title.set_text('$\zeta^{c}$')
+    plt.colorbar(imgzetac,orientation='horizontal',ax=ax2)
+    
+    imgus = ax3.imshow(P.reshape(F_us))
+    plt.gca().invert_yaxis()
+    ax3.title.set_text('$u^{s}$')
+    plt.colorbar(imgus,orientation='horizontal',ax=ax3)
+    
+    imguc = ax4.imshow(P.reshape(F_uc))
+    plt.gca().invert_yaxis()
+    ax4.title.set_text('$u^{c}$')
+    plt.colorbar(imguc,orientation='horizontal',ax=ax4)
+    
+    imgvs=ax5.imshow(P.reshape(F_vs))
+    plt.gca().invert_yaxis()
+    ax5.title.set_text('$vs$')
+    plt.colorbar(imgvs,orientation='horizontal',ax=ax5)
+    
+    imgvc=ax6.imshow(P.reshape(F_vc))
+    plt.gca().invert_yaxis()
+    ax6.title.set_text('$vc$')
+    plt.colorbar(imgvc,orientation='horizontal',ax=ax6)
+    
+    imgC=ax7.imshow(P.reshape(F_C))
+    plt.gca().invert_yaxis()
+    ax7.title.set_text('$C$')
+    plt.colorbar(imgC,orientation='horizontal',ax=ax7)
+    
+    imgh=ax8.imshow(P.reshape(F_h))
+    plt.gca().invert_yaxis()
+    ax8.title.set_text('$h$')
+    plt.colorbar(imgh,orientation='horizontal',ax=ax8)
+    
 def staticplots():
         plt.ion()
         
@@ -286,7 +331,12 @@ def Candhplots():
         plt.colorbar(imgh,orientation='horizontal',ax=ax2)
         
         ax4.plot(harr.mean(0))
+        ax4.plot(P.reshape(P.ICh0).mean(0),'k--')
+        ax4.plot(harr[0,:],'r-')
+        ax4.plot(harr[int(P.Ny/2),:],'r-')
         ax6.plot(harr.mean(1))
+        ax6.plot(P.reshape(P.ICh0).mean(1),'k--')
+        ax6.plot(harr[:,int(P.Nx/2)],'r-')
 
 
 def Animation1():
@@ -423,11 +473,121 @@ def Animation2():
         
     return animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
 
+def Sediment_transport_plot():
+        # fC  =           P.a*P.k*(
+        #                     A_xy*C + P.lambda_d*(
+        #                                         C*( LxD*beta(h)*LxD*h + LyD*beta(h)*LyD*h )
+        #                                         + beta(h)*(LxD*h*LxD*C+LyD*h*LyD*C)
+        #                                         +C*beta(h)*A_xy*h
+        #                                         )
+        #                     )
+        Sediment_transport_x = -P.Mutilde*P.Lx/P.Ly*F.LxD*h +P.delta_s*P.a*P.k*((P.Lx/P.Ly*F.LxD*C+P.lambda_d*C*F.beta(h)*F.LxD*h))
+        #Sediment_transport_x = (P.Interior+P.NorthBoundary+P.SouthBoundary)*(P.a*P.k*(F.LxD*C+P.lambda_d*(C*F.beta(h)*F.LxD*h)))
+        #Sediment_transport_x += P.WestBoundary*(P.a*P.k*(F.LxD_f*C+P.lambda_d*(C*F.beta(0)*F.LxD_f*h)))
+        #Sediment_transport_x += P.EastBoundary*(P.a*P.k*(F.LxD_b*C+P.lambda_d*(C*F.beta(1-P.H2/P.H1)*F.LxD_b*h)))
+        Sediment_transport_y = -P.Mutilde*P.Lx/P.Ly*F.LyD*h +P.delta_s*P.a*P.k*((P.Lx/P.Ly*F.LyD*C+P.lambda_d*C*F.beta(h)*F.LyD*h))
+        #Sediment_transport_y = (P.Interior+P.WestBoundary+P.EastBoundary)*(P.a*P.k*(F.LyD*C+P.lambda_d*(C*F.beta(h)*F.LyD*h)))
+        #Sediment_transport_y += P.SouthBoundary*(P.a*P.k*(F.LyD_f*C+P.lambda_d*(C*F.beta(h)*F.LyD_f*h)))
+        #Sediment_transport_y += P.NorthBoundary*(P.a*P.k*(F.LyD_b*C+P.lambda_d*(C*F.beta(h)*F.LyD_b*h)))
+        
+        fig, ((ax1, ax2),(ax3, ax4),(ax5, ax6)) = plt.subplots(3, 2)
+        
+        # initialization of the movie figure
+        Carr = P.reshape(Sediment_transport_x)
+        harr = P.reshape(Sediment_transport_y)
+        
+
+        
+        imgC = ax1.imshow(Carr,extent=[0,1,1,0],interpolation='none',aspect='auto')
+        
+        ax1.title.set_text('sedimen transport x direction')
+        plt.gca().invert_yaxis()
+        
+        plt.colorbar(imgC,orientation='horizontal',ax=ax1)
+        
+        ax3.plot(Carr.mean(0))
+        ax5.plot(Carr.mean(1))
+        
+        imgh = ax2.imshow(harr,extent=[0,1,1,0],interpolation='none',aspect='auto')
+        
+        ax2.title.set_text('sedimen transport y direction')
+        plt.gca().invert_yaxis()
+        
+        plt.colorbar(imgh,orientation='horizontal',ax=ax2)
+        
+        ax4.plot(harr.mean(0))
+
+        ax6.plot(harr.mean(1))
+
+
 staticplots()
 
 Animation2()
 
 Candhplots()
 
+Sediment_transport_plot()
+
+if BOOL_Total_Model:
+    X = np.linspace(0, 1, P.Nx+1)
+    Y = np.linspace(0, 1, P.Ny+1)
+    Z = P.reshape(h)
+
+    
+    fig, ax = plt.subplots()
+    ax.plot(X,Z.mean(0),'k-')
+    ax.plot(X,P.reshape(P.ICh0).mean(0),'k--')
+ 
+    ax.legend(['2D-model','1D-model'])
+    ax.set_title('steady-state bed profile width averaged $\overline{h}(x)$')
+    plt.show()
+    
+    import matplotlib.cm as cm
+    fig, ax = plt.subplots()
+    im = ax.imshow(Z, interpolation='None', origin='lower',
+                    cmap=cm.gray, extent=(0, 1, 0,1),aspect='auto')
+    levels = np.arange(np.min(Z), np.max(Z), (np.max(Z)-np.min(Z))/9)
+    CS = ax.contour(Z, levels, origin='lower', cmap='gist_yarg',
+                    linewidths=2, extent=(0, 1, 0, 1))
+    
+    # Thicken the zero contour.
+
+    
+    ax.clabel(CS, levels,  # label every second level
+              inline=1, fmt='%1.2f', fontsize=14)
+    
+    # make a colorbar for the contour lines
+    
+    ax.set_title('steady-state bed profile $h(x,y)$')
+    
+    # We can still add a colorbar for the image, too.
+    CBI = fig.colorbar(im, orientation='horizontal')
+    
+    # This makes the original colorbar look a bit out of place,
+    # so let's improve its position.
+    
+    PLOT_l, PLOT_b, PLOT_w, PLOT_h = ax.get_position().bounds
+
+
+    plt.show()
+    
+if True:
+    Num_eigenvalues=10
+    EIGvals, EIGvecs=sp.linalg.eigs(NJ,Num_eigenvalues)
+    print('\t \t ---------- EIGEN VALUE analysis on last jacobian---------  \t')
+    print('\t  %i numerically determined eigen vals analysed ' %(Num_eigenvalues))
+    print('\t  largest real part of  %1.2e \t largest real part of  %1.2e ' %(np.max(EIGvals.real),np.min(EIGvals.real)))
+    
+    fig, (ax1,ax2) = plt.subplots(1,2)
+    
+    ax1.boxplot(EIGvals.real)
+    ax1.set_title('real eigen values')
+    ax2.boxplot(EIGvals.imag)
+    ax2.set_title('imaginary eigen values')
+    
+    generictotalplot(EIGvecs.real[:,0])
+    
+
+    
     
 print('\t ------------------------------')

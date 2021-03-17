@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import Model_functions as func
 import Model_parameters as P
 
+
 from tqdm import tqdm 
 
 def split(U):
@@ -715,8 +716,6 @@ def NumericalJacobian(U):
 
 def AnalyticalJacobian_zetas(U):
     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
-    
-    zeros=sp.csr_matrix(func.LxD.shape)
 
     
     ''' zetas '''
@@ -827,8 +826,8 @@ def AnalyticalJacobian_zetac(U):
     J27 += NorthBoundary*zeros
     J28 += NorthBoundary.multiply(    -sp.diags(func.LxD*us)   -func.LxD.multiply(us.T)    )
     ''' Corner points  '''
-    J21 += -NWCorner-NECorner-SWCorner-SECorner
-    J22 += zeros   
+    J21 += zeros
+    J22 += -NWCorner-NECorner-SWCorner-SECorner   
     J23 += zeros
     J24 += zeros
     J25 += zeros
@@ -839,16 +838,338 @@ def AnalyticalJacobian_zetac(U):
     return J21,J22,J23,J24,J25,J26,J27,J28
 
 
+def AnalyticalJacobian_us(U):
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    ''' us '''
+    ''' Interior -us -np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas '''  
+    J31 = interior.multiply(    -P.lambda_L**(-2)*func.LxD       )
+    J32 = interior*zeros
+    J33 = interior.multiply(    -I      )
+    J34 = interior.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 = interior*zeros
+    J36 = interior*zeros
+    J37 = interior*zeros
+    J38 = interior.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    ''' West boundary   -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*(LxD_f*zetas)  '''
+    J31 += WestBoudnary.multiply(    -P.lambda_L**(-2)*func.LxD_f       )
+    J32 += WestBoudnary*zeros
+    J33 += WestBoudnary.multiply(    -I      )
+    J34 += WestBoudnary.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += WestBoudnary*zeros
+    J36 += WestBoudnary*zeros
+    J37 += WestBoudnary*zeros
+    J38 += WestBoudnary.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    ''' East boundary -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*(LxD_b*zetas)  '''
+    J31 += EastBoundary.multiply(    -P.lambda_L**(-2)*func.LxD_b       )
+    J32 += EastBoundary*zeros
+    J33 += EastBoundary.multiply(    -I      )
+    J34 += EastBoundary.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += EastBoundary*zeros
+    J36 += EastBoundary*zeros
+    J37 += EastBoundary*zeros
+    J38 += EastBoundary.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    ''' South boundary -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas '''
+    J31 += SouthBoundary.multiply(    -P.lambda_L**(-2)*func.LxD       )
+    J32 += SouthBoundary*zeros
+    J33 += SouthBoundary.multiply(    -I      )
+    J34 += SouthBoundary.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += SouthBoundary*zeros
+    J36 += SouthBoundary*zeros
+    J37 += SouthBoundary*zeros
+    J38 += SouthBoundary.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    ''' North boundary -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas '''
+    J31 += NorthBoundary.multiply(    -P.lambda_L**(-2)*func.LxD       )
+    J32 += NorthBoundary*zeros
+    J33 += NorthBoundary.multiply(    -I      )
+    J34 += NorthBoundary.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += NorthBoundary*zeros
+    J36 += NorthBoundary*zeros
+    J37 += NorthBoundary*zeros
+    J38 += NorthBoundary.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    ''' Corner points  '''
+    J31 += NWCorner.multiply(    -P.lambda_L**(-2)*func.LxD_f      )
+    J32 += NWCorner*zeros
+    J33 += NWCorner.multiply(    -I      )
+    J34 += NWCorner.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += NWCorner*zeros
+    J36 += NWCorner*zeros
+    J37 += NWCorner*zeros
+    J38 += NWCorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    J31 += SWCorner.multiply(    -P.lambda_L**(-2)*func.LxD_f      )
+    J32 += SWCorner*zeros
+    J33 += SWCorner.multiply(    -I      )
+    J34 += SWCorner.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += SWCorner*zeros
+    J36 += SWCorner*zeros
+    J37 += SWCorner*zeros
+    J38 += SWCorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    
+    J31 += NECorner.multiply(    -P.lambda_L**(-2)*func.LxD_b      )
+    J32 += NECorner*zeros
+    J33 += NECorner.multiply(    -I      )
+    J34 += NECorner.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += NECorner*zeros
+    J36 += NECorner*zeros
+    J37 += NECorner*zeros
+    J38 += NECorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    J31 += SECorner.multiply(    -P.lambda_L**(-2)*func.LxD_b     )
+    J32 += SECorner*zeros
+    J33 += SECorner.multiply(    -I      )
+    J34 += SECorner.multiply(     -sp.diags(np.divide(P.r,1-h))      )
+    J35 += SECorner*zeros
+    J36 += SECorner*zeros
+    J37 += SECorner*zeros
+    J38 += SECorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*uc)       )
+    return J31,J32,J33,J34,J35,J36,J37,J38
+
+def AnalyticalJacobian_uc(U):
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    ''' uc '''
+    ''' Interior -uc  +np.divide(P.r, 1-h)*us +P.lambda_L**(2)*LxD*zetac ''' 
+    J41 = interior*zeros
+    J42 = interior.multiply(        P.lambda_L**(-2)*func.LxD       )
+    J43 = interior.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 = interior.multiply(        -I      )
+    J45 = interior*zeros
+    J46 = interior*zeros
+    J47 = interior*zeros
+    J48 = interior.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    ''' West boundary -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD_f*zetac '''
+    J41 += WestBoudnary*zeros
+    J42 += WestBoudnary.multiply(        P.lambda_L**(-2)*func.LxD_f       )
+    J43 += WestBoudnary.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += WestBoudnary.multiply(        -I      )
+    J45 += WestBoudnary*zeros
+    J46 += WestBoudnary*zeros
+    J47 += WestBoudnary*zeros
+    J48 += WestBoudnary.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    ''' East boundary  -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD_b*zetac  '''
+    J41 += EastBoundary*zeros
+    J42 += EastBoundary.multiply(        P.lambda_L**(-2)*func.LxD_b       )
+    J43 += EastBoundary.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += EastBoundary.multiply(        -I      )
+    J45 += EastBoundary*zeros
+    J46 += EastBoundary*zeros
+    J47 += EastBoundary*zeros
+    J48 += EastBoundary.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    ''' South boundary   -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD*zetac  '''
+    J41 += SouthBoundary*zeros
+    J42 += SouthBoundary.multiply(        P.lambda_L**(-2)*func.LxD       )
+    J43 += SouthBoundary.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += SouthBoundary.multiply(        -I      )
+    J45 += SouthBoundary*zeros
+    J46 += SouthBoundary*zeros
+    J47 += SouthBoundary*zeros
+    J48 += SouthBoundary.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    ''' North boundary -uc+np.divide(P.r, 1-h)*us+P.lambda_L**(2)*LxD*zetac  '''
+    J41 += NorthBoundary*zeros
+    J42 += NorthBoundary.multiply(        P.lambda_L**(-2)*func.LxD       )
+    J43 += NorthBoundary.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += NorthBoundary.multiply(        -I      )
+    J45 += NorthBoundary*zeros
+    J46 += NorthBoundary*zeros
+    J47 += NorthBoundary*zeros
+    J48 += NorthBoundary.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    ''' Corner points  '''
+    J41 += NWCorner*zeros
+    J42 += NWCorner.multiply(        P.lambda_L**(-2)*func.LxD_f       )
+    J43 += NWCorner.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += NWCorner.multiply(        -I      )
+    J45 += NWCorner*zeros
+    J46 += NWCorner*zeros
+    J47 += NWCorner*zeros
+    J48 += NWCorner.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    J41 += SWCorner*zeros
+    J42 += SWCorner.multiply(        P.lambda_L**(-2)*func.LxD_f       )
+    J43 += SWCorner.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += SWCorner.multiply(        -I      )
+    J45 += SWCorner*zeros
+    J46 += SWCorner*zeros
+    J47 += SWCorner*zeros
+    J48 += SWCorner.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    
+    J41 += NECorner*zeros
+    J42 += NECorner.multiply(        P.lambda_L**(-2)*func.LxD_b       )
+    J43 += NECorner.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += NECorner.multiply(        -I      )
+    J45 += NECorner*zeros
+    J46 += NECorner*zeros
+    J47 += NECorner*zeros
+    J48 += NECorner.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    J41 += SECorner*zeros
+    J42 += SECorner.multiply(        P.lambda_L**(-2)*func.LxD_b       )
+    J43 += SECorner.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J44 += SECorner.multiply(        -I      )
+    J45 += SECorner*zeros
+    J46 += SECorner*zeros
+    J47 += SECorner*zeros
+    J48 += SECorner.multiply(        sp.diags(P.r*(1-h)**(-2)*us)     )
+    return J41,J42,J43,J44,J45,J46,J47,J48
+
+def AnalyticalJacobian_vs(U):
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    ''' vs '''
+    ''' Interior -vs  -np.divide(P.r, 1-h)*vc -P.lambda_L**(2)*LyD*zetas ''' 
+    J51 = interior.multiply(    -P.lambda_L**(-2)*func.LyD      )
+    J52 = interior*zeros
+    J53 = interior*zeros
+    J54 = interior*zeros
+    J55 = interior.multiply(    -I      )
+    J56 = interior.multiply(    -sp.diags(np.divide(P.r,1-h))       )
+    J57 = interior*zeros
+    J58 = interior.multiply(    -sp.diags(P.r*(1-h)**(-2)*vc)       )
+    ''' West boundary -vc+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD*zetac '''
+    J51 += WestBoudnary.multiply(    -P.lambda_L**(-2)*func.LyD      )
+    J52 += WestBoudnary*zeros
+    J53 += WestBoudnary*zeros
+    J54 += WestBoudnary*zeros
+    J55 += WestBoudnary.multiply(    -I      )
+    J56 += WestBoudnary.multiply(    -sp.diags(np.divide(P.r,1-h))       )
+    J57 += WestBoudnary*zeros
+    J58 += WestBoudnary.multiply(    -sp.diags(P.r*(1-h)**(-2)*vc)       )
+    ''' East boundary  '''
+    J51 += EastBoundary.multiply(    -P.lambda_L**(-2)*func.LyD      )
+    J52 += EastBoundary*zeros
+    J53 += EastBoundary*zeros
+    J54 += EastBoundary*zeros
+    J55 += EastBoundary.multiply(    -I      )
+    J56 += EastBoundary.multiply(    -sp.diags(np.divide(P.r,1-h))       )
+    J57 += EastBoundary*zeros
+    J58 += EastBoundary.multiply(    -sp.diags(P.r*(1-h)**(-2)*vc)       )
+    ''' South boundary  -vc+0 '''
+    J51 += SouthBoundary*zeros
+    J52 += SouthBoundary*zeros
+    J53 += SouthBoundary*zeros
+    J54 += SouthBoundary*zeros
+    J55 += SouthBoundary.multiply(    -I      )
+    J56 += SouthBoundary*zeros
+    J57 += SouthBoundary*zeros
+    J58 += SouthBoundary*zeros
+    ''' North boundary -vc+0 '''
+    J51 += NorthBoundary*zeros
+    J52 += NorthBoundary*zeros
+    J53 += NorthBoundary*zeros
+    J54 += NorthBoundary*zeros
+    J55 += NorthBoundary.multiply(    -I      )
+    J56 += NorthBoundary*zeros
+    J57 += NorthBoundary*zeros
+    J58 += NorthBoundary*zeros
+    ''' Corner points North -vc+P.fhat*us+np.divide(P.r,1-h)*vs+P.lambda_L**(2)*LyD_b*zetac '''
+    J51 += NWCorner.multiply(    -P.lambda_L**(-2)*func.LyD_b      )
+    J52 += NWCorner*zeros
+    J53 += NWCorner*zeros
+    J54 += NWCorner*zeros
+    J55 += NWCorner.multiply(    -I      )
+    J56 += NWCorner.multiply(    -sp.diags(np.divide(P.r,1-h))       )
+    J57 += NWCorner*zeros
+    J58 += NWCorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*vc)       )
+    J51 += SWCorner.multiply(    -P.lambda_L**(-2)*func.LyD_f      )
+    J52 += SWCorner*zeros
+    J53 += SWCorner*zeros
+    J54 += SWCorner*zeros
+    J55 += SWCorner.multiply(    -I      )
+    J56 += SWCorner.multiply(    -sp.diags(np.divide(P.r,1-h))       )
+    J57 += SWCorner*zeros
+    J58 += SWCorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*vc)       )
+    
+    J51 += NECorner.multiply(    -P.lambda_L**(-2)*func.LyD_b      )
+    J52 += NECorner*zeros
+    J53 += NECorner*zeros
+    J54 += NECorner*zeros
+    J55 += NECorner.multiply(    -I      )
+    J56 += NECorner.multiply(    -sp.diags(np.divide(P.r,1-h))       )
+    J57 += NECorner*zeros
+    J58 += NECorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*vc)       )
+    J51 += SECorner.multiply(    -P.lambda_L**(-2)*func.LyD_f      )
+    J52 += SECorner*zeros
+    J53 += SECorner*zeros
+    J54 += SECorner*zeros
+    J55 += SECorner.multiply(    -I      )
+    J56 += SECorner.multiply(    -sp.diags(np.divide(P.r,1-h))       )
+    J57 += SECorner*zeros
+    J58 += SECorner.multiply(    -sp.diags(P.r*(1-h)**(-2)*vc)       )
+    return J51,J52,J53,J54,J55,J56,J57,J58
 
 
+def AnalyticalJacobian_vc(U):
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    ''' vc '''
+    ''' Interior -vc +P.fhat*us   +np.divide(P.r, 1-h)*vs +P.lambda_L**(2)*LyD*zetac ''' 
+    J61 = interior*zeros
+    J62 = interior.multiply(        P.lambda_L**(-2)*func.LyD       )
+    J63 = interior*zeros
+    J64 = interior*zeros
+    J65 = interior.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J66 = interior.multiply(        -I      )
+    J67 = interior*zeros
+    J68 = interior.multiply(        sp.diags(P.r*(1-h)**(-2)*vs)    )
+    ''' West boundary  '''
+    J61 += WestBoudnary*zeros
+    J62 += WestBoudnary.multiply(        P.lambda_L**(-2)*func.LyD       )
+    J63 += WestBoudnary*zeros
+    J64 += WestBoudnary*zeros
+    J65 += WestBoudnary.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J66 += WestBoudnary.multiply(        -I      )
+    J67 += WestBoudnary*zeros
+    J68 += WestBoudnary.multiply(        sp.diags(P.r*(1-h)**(-2)*vs)    )
+    ''' East boundary  '''
+    J61 += EastBoundary*zeros
+    J62 += EastBoundary.multiply(        P.lambda_L**(-2)*func.LyD       )
+    J63 += EastBoundary*zeros
+    J64 += EastBoundary*zeros
+    J65 += EastBoundary.multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J66 += EastBoundary.multiply(        -I      )
+    J67 += EastBoundary*zeros
+    J68 += EastBoundary.multiply(        sp.diags(P.r*(1-h)**(-2)*vs)    )
+    ''' South boundary '''
+    J61 += SouthBoundary*zeros
+    J62 += SouthBoundary*zeros
+    J63 += SouthBoundary*zeros
+    J64 += SouthBoundary*zeros
+    J65 += SouthBoundary*zeros
+    J66 += SouthBoundary.multiply(        -I      )
+    J67 += SouthBoundary*zeros
+    J68 += SouthBoundary*zeros
+    ''' North boundary '''
+    J61 += NorthBoundary*zeros
+    J62 += NorthBoundary*zeros
+    J63 += NorthBoundary*zeros
+    J64 += NorthBoundary*zeros
+    J65 += NorthBoundary*zeros
+    J66 += NorthBoundary.multiply(        -I      )
+    J67 += NorthBoundary*zeros
+    J68 += NorthBoundary*zeros
+    ''' Corner points  '''
+    J61 += (NWCorner+NECorner)*zeros
+    J62 += (NWCorner+NECorner).multiply(        P.lambda_L**(-2)*func.LyD_b       )
+    J63 += (NWCorner+NECorner)*zeros
+    J64 += (NWCorner+NECorner)*zeros
+    J65 += (NWCorner+NECorner).multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J66 += (NWCorner+NECorner).multiply(        -I      )
+    J67 += (NWCorner+NECorner)*zeros
+    J68 += (NWCorner+NECorner).multiply(        sp.diags(P.r*(1-h)**(-2)*vs)    )
+    
+    J61 += (SWCorner+SECorner)*zeros
+    J62 += (SWCorner+SECorner).multiply(        P.lambda_L**(-2)*func.LyD_f       )
+    J63 += (SWCorner+SECorner)*zeros
+    J64 += (SWCorner+SECorner)*zeros
+    J65 += (SWCorner+SECorner).multiply(        sp.diags(np.divide(P.r,1-h))    )
+    J66 += (SWCorner+SECorner).multiply(        -I      )
+    J67 += (SWCorner+SECorner)*zeros
+    J68 += (SWCorner+SECorner).multiply(        sp.diags(P.r*(1-h)**(-2)*vs)    )
+    return J61,J62,J63,J64,J65,J66,J67,J68
 
+def AnalyticalJacobian_C(U):
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    
+    
+    return J71,J72,J73,J74,J75,J76,J77,J78
 
-
-
-
-
-
-
+def AnalyticalJacobian_h(U):
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    
+    
+    return J81,J82,J83,J84,J85,J86,J87,J88
 
 def plotjacobian(NJ,BOOL=False):
     plt.figure();
