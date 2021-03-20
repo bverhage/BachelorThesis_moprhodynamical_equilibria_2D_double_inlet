@@ -76,7 +76,7 @@ def NumericalJacobian(U):
 
     
     for i in tqdm(range(0,(P.Nx+1)*(P.Ny+1))):
-        h_small=1e-8*I.toarray()[:,i]
+        h_small=1e-12*I.toarray()[:,i]
         
         for NJ_func in {func.Fzetas,func.Fzetac,func.Fus,func.Fuc,func.Fvs,func.Fvc,func.FC}:
             if NJ_func == func.Fzetas:

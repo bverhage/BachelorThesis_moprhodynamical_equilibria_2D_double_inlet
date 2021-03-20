@@ -11,8 +11,8 @@ import numpy as np
  
 ''' Model pramters ''' 
 
-Nx = 40+1                # interior points + 1
-Ny = 3+1#int((Nx-1)*1/4)+1
+Nx = 30+1                # interior points + 1
+Ny = 10+1#int((Nx-1)*1/4)+1
 
 dx = 1/Nx
 dy = 1/Ny
@@ -45,7 +45,7 @@ A2 = A # 0.77 # [ m ]
 
 Atilde = A2/A  # [ - ]
 
-phi = 1/180*np.pi # #54 [ - ]
+phi = 0/180*np.pi # #54 [ - ]
 
 
 '''  Sediment  Parameters '''

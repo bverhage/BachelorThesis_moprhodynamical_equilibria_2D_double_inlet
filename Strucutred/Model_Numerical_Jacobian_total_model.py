@@ -85,7 +85,7 @@ def NumericalJacobian(U):
     J81=np.zeros(I.shape);J82=np.zeros(I.shape);J83=np.zeros(I.shape);J84=np.zeros(I.shape);J85=np.zeros(I.shape);J86=np.zeros(I.shape);J87=np.zeros(I.shape);J88=np.zeros(I.shape);
     
     for i in tqdm(range(0,(P.Nx+1)*(P.Ny+1))):
-        h_small=1e-10*I.toarray()[:,i]
+        h_small=1e-12*I.toarray()[:,i]
         
         for NJ_func in {func.Fzetas,func.Fzetac,func.Fus,func.Fuc,func.Fvs,func.Fvc,func.FC,func.Fh}:
             if NJ_func == func.Fzetas:
