@@ -594,7 +594,7 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
     ''' interior '''
     fC  =           P.a*P.k*(
                             A_x*C+(P.Lx/P.Ly)**2*A_y*C 
-                                    # + 0*P.lambda_d*(
+                                    # +0*P.lambda_d*(
                                     #             C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )
                                     #             + beta(h)*( LxD*h*LxD*C + (P.Lx/P.Ly)**2*LyD*h*LyD*C)
                                     #             +C*beta(h)*( A_x*h + (P.Lx/P.Ly)**2*A_y*h )
@@ -698,14 +698,14 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
 def Fh(zetas,zetac,us,uc,vs,vc,C,h):
     # if N=0 (how it should be) the system is not stable
     # 
-    N=0#2.7
+    N=1#2.7
     
     ''' interior '''
-    fh  = -P.Mutilde*(A_x*h+(P.Lx/P.Ly)**2*A_y*h) #-P.Mutilde*A_xy*h
+    fh  = P.Mutilde*(A_x*h+(P.Lx/P.Ly)**2*A_y*h) #-P.Mutilde*A_xy*h
     if False:
-        fh  += -10**(-N)*P.delta_s*(-1*beta(h)*C+0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
+        fh  += -(1-10**(-N))*P.delta_s*(-1*beta(h)*C+0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
     else:
-        fh  += -10**(-N)*P.delta_s*P.a*P.k*(
+        fh  += (1-10**(-N))*P.delta_s*P.a*P.k*(
                             A_x*C+(P.Lx/P.Ly)**2*A_y*C 
                                     # + 0*P.lambda_d*(
                                     #             C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )

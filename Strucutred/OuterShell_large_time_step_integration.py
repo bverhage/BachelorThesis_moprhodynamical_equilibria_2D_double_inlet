@@ -16,12 +16,13 @@ if True:
  
     import Model_parameters as P
     import Model_functions as F
-
+    from scipy import optimize
+    
     plt.close("all")
     
 P.printparamters()  
 
-BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = True,False,False
+BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = False,False,True
 
 
 
@@ -35,19 +36,18 @@ if BOOL_Total_Model:
     #DeltaU=la.spsolve(TM_con.NumericalJacobian(Uinnitalguess_con),TM_con.F(Uinnitalguess_con))
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
-    from scipy import optimize
-    Uinnitalguess = np.load('Uphi69.npy')#np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
-    #Uinnitalguess = optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)) )
+    
+    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
     
     
 elif BOOL_Only_Water_model:
     import Model_Numerical_Jacobian_water_model as TM
-    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0))
+    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))
     print('\t ====Water model====\n')
 
 elif BOOL_Only_Concentration_model:
     import Model_Numerical_Jacobian_concentration_model as TM
-    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0))
+    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))
     print('\t ====Water+Concentration model====\n')
     
 
@@ -58,13 +58,14 @@ elif BOOL_Only_Concentration_model:
 ''' Initial condition '''
 
 
-NJ=TM.NumericalJacobian(Uinnitalguess)
+  
+
+# the run
    
 
 
 
 def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
-    global NJ
     print('\n \t  Starting Newton Rapson Method \t \n')
     epsilon=10**(-8)
     
@@ -72,7 +73,9 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     
     i=0
     
-    DeltaU=la.spsolve(NJ,TM.F(Uiend))
+    DeltaU=la.spsolve(TM.NumericalJacobian(Uiend),TM.F(Uiend))
+    DeltaU=np.concatenate((DeltaU,P.ICC0))
+            
     Uiend=Uiend-DeltaU
 
     print('\t Newton Rapson loop \n i=0 \t ||F(U)||_max = %.2e < %.2e \n ' %(TM.MaxNormOfU(TM.F(Uiend)),epsilon))
@@ -104,13 +107,21 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
          elif Check>epsilon and Check<10**(20)*epsilon:
 
              Stopcondition=1
-             NJ=TM.NumericalJacobian(Uiend)
-             DeltaU=la.spsolve(NJ,TM.F(Uiend))
+             DeltaU=la.spsolve(TM.NumericalJacobian(Uiend),TM.F(Uiend))
+             DeltaU=np.concatenate((DeltaU,P.ICC0))
+            
              Uiend=Uiend-DeltaU
              print('\t Newton Rapson loop \n i=%i \t ||F(U)||_max = %.2e < %.2e \n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
          zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uiend)
          
-         F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Uiend))
+         F_zetas=F.Fzetas(zetas,zetac,us,uc,vs,vc,C,h)
+         F_zetac=F.Fzetac(zetas,zetac,us,uc,vs,vc,C,h)
+         F_us=F.Fus(zetas,zetac,us,uc,vs,vc,C,h)
+         F_uc=F.Fuc(zetas,zetac,us,uc,vs,vc,C,h)
+         F_vs=F.Fvs(zetas,zetac,us,uc,vs,vc,C,h)
+         F_vc=F.Fvc(zetas,zetac,us,uc,vs,vc,C,h)
+         F_C=F.FC(zetas,zetac,us,uc,vs,vc,C,h)
+         F_h=F.Fh(zetas,zetac,us,uc,vs,vc,C,h)
          print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
 
              
@@ -134,7 +145,7 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
              break
              
              
-         if i>50:
+         if i>20:
             break
         
 
@@ -143,16 +154,87 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
             
     return Uiend    
 
-# the run
     
-Ufinal=NewtonRapsonInnerloop(Uinnitalguess)
-zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Ufinal)
+# Ufinal=NewtonRapsonInnerloop(Uinnitalguess)
+# zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Ufinal)
+
+def time_integration(Uinnitalguess):
+    
+    tStart=0
+    
+    tEnd=1000000
+    
+    Nt=2000
+    
+    ht=(tEnd-tStart)/Nt
+    U=Uinnitalguess
+    
+   
+    
+    for i in range(Nt):
+            
+        U=NewtonRapsonInnerloop(U)
+        zetas,zetac,us,uc,vs,vc,C,h=TM.split(U)
+
+        h=h+ht*P.Interior*F.Fh(zetas,zetac,us,uc,vs,vc,C,h)
+        U = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
+        #uEnd=(I-ht*A).__pow__(Nt) * uStart
+        
+            
+        if np.min(C)<0 :
+            print('\n ------- \t  Negative Concentration! \t ---------\n')
+            print('min(C) = %.2e\n ' %(np.min(C)))
+                
+            break
+        if np.min(1-h+P.epsilon*zetac)<0 or np.min(1-h+P.epsilon*zetas)<0 :
+            print('\n ------- \t  NON physical water model! \t ---------\n')
+            
+            break
+            
+    return U
+    
+    # def solveBE(uStart,tStart,tEnd,Nt):
+    #     ht=(tEnd-tStart)/Nt
+    #     uEnd=uStart
+    #     for i in range(Nt):
+    #         uEnd=la.spsolve((I+ht*A),uEnd)
+    #     return uEnd
+    
+    # def solveTR(uStart,tStart,tEnd,Nt):
+    #     ht=(tEnd-tStart)/Nt
+    #     uEnd=uStart
+    #     for i in range(Nt):
+    #         uEnd=la.spsolve((I+0.5*ht*A),(I-0.5*ht*A).dot(uEnd))
+    #     return uEnd
+
+Ufinal=time_integration(Uinnitalguess)
+zetas,zetac,us,uc,vs,vc,C,h=TM.split(Ufinal)  
 
 
+
+
+F_zetas=F.Fzetas(zetas,zetac,us,uc,vs,vc,C,h)
+F_zetac=F.Fzetac(zetas,zetac,us,uc,vs,vc,C,h)
+F_us=F.Fus(zetas,zetac,us,uc,vs,vc,C,h)
+F_uc=F.Fuc(zetas,zetac,us,uc,vs,vc,C,h)
+F_vs=F.Fvs(zetas,zetac,us,uc,vs,vc,C,h)
+F_vc=F.Fvc(zetas,zetac,us,uc,vs,vc,C,h)
+F_C=F.FC(zetas,zetac,us,uc,vs,vc,C,h)
+F_h=F.Fh(zetas,zetac,us,uc,vs,vc,C,h)
+print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
+
+             
+if np.min(C)<0 :
+    print('\n ------- \t  Negative Concentration! \t ---------\n')
+    print('min(C) = %.2e\n ' %(np.min(C)))
+        
+if np.min(1-h+P.epsilon*zetac)<0 or np.min(1-h+P.epsilon*zetas)<0 :
+    print('\n ------- \t  NON physical water model! \t ---------\n')
+
+                                           
 Check=np.where(TM.F(Ufinal)!=0)
 if Check[0].size>0 :
     print('\t ------- F=!0 ------- \t \n')
-    F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Ufinal))
     
     fig, ((ax1,ax3,ax5,ax7),(ax2,ax4,ax6,ax8)) = plt.subplots(2,4)
     plt.suptitle('F(U)') 
@@ -199,49 +281,49 @@ if Check[0].size>0 :
 
 
 ''' the plots '''
-def  generictotalplot(Ufinal):
-    F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Ufinal))
-    fig, ((ax1,ax3,ax5,ax7),(ax2,ax4,ax6,ax8)) = plt.subplots(2,4)
-    plt.suptitle('total plot') 
-    plt.gca().invert_yaxis()
-    imgzetas = ax1.imshow(P.reshape(F_zetas))
-    ax1.title.set_text('$\zeta^{s}$')
-    plt.colorbar(imgzetas,orientation='horizontal',ax=ax1)
+# def  generictotalplot(Ufinal):
+#     F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Ufinal))
+#     fig, ((ax1,ax3,ax5,ax7),(ax2,ax4,ax6,ax8)) = plt.subplots(2,4)
+#     plt.suptitle('total plot') 
+#     plt.gca().invert_yaxis()
+#     imgzetas = ax1.imshow(P.reshape(F_zetas))
+#     ax1.title.set_text('$\zeta^{s}$')
+#     plt.colorbar(imgzetas,orientation='horizontal',ax=ax1)
     
-    imgzetac = ax2.imshow(P.reshape(F_zetac))
-    plt.gca().invert_yaxis()
-    ax2.title.set_text('$\zeta^{c}$')
-    plt.colorbar(imgzetac,orientation='horizontal',ax=ax2)
+#     imgzetac = ax2.imshow(P.reshape(F_zetac))
+#     plt.gca().invert_yaxis()
+#     ax2.title.set_text('$\zeta^{c}$')
+#     plt.colorbar(imgzetac,orientation='horizontal',ax=ax2)
     
-    imgus = ax3.imshow(P.reshape(F_us))
-    plt.gca().invert_yaxis()
-    ax3.title.set_text('$u^{s}$')
-    plt.colorbar(imgus,orientation='horizontal',ax=ax3)
+#     imgus = ax3.imshow(P.reshape(F_us))
+#     plt.gca().invert_yaxis()
+#     ax3.title.set_text('$u^{s}$')
+#     plt.colorbar(imgus,orientation='horizontal',ax=ax3)
     
-    imguc = ax4.imshow(P.reshape(F_uc))
-    plt.gca().invert_yaxis()
-    ax4.title.set_text('$u^{c}$')
-    plt.colorbar(imguc,orientation='horizontal',ax=ax4)
+#     imguc = ax4.imshow(P.reshape(F_uc))
+#     plt.gca().invert_yaxis()
+#     ax4.title.set_text('$u^{c}$')
+#     plt.colorbar(imguc,orientation='horizontal',ax=ax4)
     
-    imgvs=ax5.imshow(P.reshape(F_vs))
-    plt.gca().invert_yaxis()
-    ax5.title.set_text('$vs$')
-    plt.colorbar(imgvs,orientation='horizontal',ax=ax5)
+#     imgvs=ax5.imshow(P.reshape(F_vs))
+#     plt.gca().invert_yaxis()
+#     ax5.title.set_text('$vs$')
+#     plt.colorbar(imgvs,orientation='horizontal',ax=ax5)
     
-    imgvc=ax6.imshow(P.reshape(F_vc))
-    plt.gca().invert_yaxis()
-    ax6.title.set_text('$vc$')
-    plt.colorbar(imgvc,orientation='horizontal',ax=ax6)
+#     imgvc=ax6.imshow(P.reshape(F_vc))
+#     plt.gca().invert_yaxis()
+#     ax6.title.set_text('$vc$')
+#     plt.colorbar(imgvc,orientation='horizontal',ax=ax6)
     
-    imgC=ax7.imshow(P.reshape(F_C))
-    plt.gca().invert_yaxis()
-    ax7.title.set_text('$C$')
-    plt.colorbar(imgC,orientation='horizontal',ax=ax7)
+#     imgC=ax7.imshow(P.reshape(F_C))
+#     plt.gca().invert_yaxis()
+#     ax7.title.set_text('$C$')
+#     plt.colorbar(imgC,orientation='horizontal',ax=ax7)
     
-    imgh=ax8.imshow(P.reshape(F_h))
-    plt.gca().invert_yaxis()
-    ax8.title.set_text('$h$')
-    plt.colorbar(imgh,orientation='horizontal',ax=ax8)
+#     imgh=ax8.imshow(P.reshape(F_h))
+#     plt.gca().invert_yaxis()
+#     ax8.title.set_text('$h$')
+#     plt.colorbar(imgh,orientation='horizontal',ax=ax8)
     
 def staticplots():
         plt.ion()

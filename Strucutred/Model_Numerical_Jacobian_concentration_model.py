@@ -15,22 +15,21 @@ import Model_parameters as P
 
 from tqdm import tqdm 
 
-h=P.ICh0
 
 
 def split(U):
-    zetas,zetac,us,uc,vs,vc,C=np.array_split(U,7)
-    return zetas,zetac,us,uc,vs,vc,C
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
+    return zetas,zetac,us,uc,vs,vc,C,h
 
 def split_animation(U):
     
-    zetas,zetac,us,uc,vs,vc,C=np.array_split(U,7)
+    zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
     
     return zetas,zetac,us,uc,vs,vc,C,h
 
 def MaxNormOfU(U):
      ''' The max 2 norm of U=(u,v)^T w'''
-     zetas,zetac,us,uc,vs,vc,C=split(U)
+     zetas,zetac,us,uc,vs,vc,C,h=split(U)
      return np.max([
          np.linalg.norm(zetas),
          np.linalg.norm(zetac),
@@ -44,15 +43,15 @@ def MaxNormOfU(U):
 
 
 def F(U):
-    zetas,zetac,us,uc,vs,vc,C=split(U)
+    zetas,zetac,us,uc,vs,vc,C,h=split(U)
     
-    ans=np.concatenate((func.Fzetas(zetas,zetac,us,uc,vs,vc,C,P.ICh0),
-                        func.Fzetac(zetas,zetac,us,uc,vs,vc,C,P.ICh0),
-                           func.Fus(zetas,zetac,us,uc,vs,vc,C,P.ICh0),
-                           func.Fuc(zetas,zetac,us,uc,vs,vc,C,P.ICh0),
-                           func.Fvs(zetas,zetac,us,uc,vs,vc,C,P.ICh0),
-                           func.Fvc(zetas,zetac,us,uc,vs,vc,C,P.ICh0),
-                           func.FC(zetas,zetac,us,uc,vs,vc,C,P.ICh0)
+    ans=np.concatenate((func.Fzetas(zetas,zetac,us,uc,vs,vc,C,h),
+                        func.Fzetac(zetas,zetac,us,uc,vs,vc,C,h),
+                           func.Fus(zetas,zetac,us,uc,vs,vc,C,h),
+                           func.Fuc(zetas,zetac,us,uc,vs,vc,C,h),
+                           func.Fvs(zetas,zetac,us,uc,vs,vc,C,h),
+                           func.Fvc(zetas,zetac,us,uc,vs,vc,C,h),
+                           func.FC(zetas,zetac,us,uc,vs,vc,C,h)
                            ))
 
     return ans
@@ -63,7 +62,7 @@ def F(U):
 I=func.I
 
 def NumericalJacobian(U):
-    zetas,zetac,us,uc,vs,vc,C=split(U)
+    zetas,zetac,us,uc,vs,vc,C,h=split(U)
     print('\n \t Numerical Jacobian Inner loop')
     
     J11=np.zeros(I.shape);J12=np.zeros(I.shape);J13=np.zeros(I.shape);J14=np.zeros(I.shape);J15=np.zeros(I.shape);J16=np.zeros(I.shape);J17=np.zeros(I.shape);

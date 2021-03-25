@@ -12,7 +12,7 @@ import numpy as np
 ''' Model pramters ''' 
 
 Nx = 30+1                # interior points + 1
-Ny = 10+1#int((Nx-1)*1/4)+1
+Ny = 1+1#int((Nx-1)*1/4)+1
 
 dx = 1/Nx
 dy = 1/Ny
@@ -45,7 +45,7 @@ A2 = A # 0.77 # [ m ]
 
 Atilde = A2/A  # [ - ]
 
-phi = 0/180*np.pi # #54 [ - ]
+phi = 24.40/180*np.pi # #54 [ - ]
 
 
 '''  Sediment  Parameters '''
@@ -103,6 +103,15 @@ def printparamters():
 def bedprofile(x,y):
 
      return (1-H2/H1)*x
+
+def sin(x,y):
+    return np.sin(x)
+
+def cos(x,y):
+    return np.cos(x)
+
+def icC(x,y):
+    return x
 
 def func0(x,y):
     return 0

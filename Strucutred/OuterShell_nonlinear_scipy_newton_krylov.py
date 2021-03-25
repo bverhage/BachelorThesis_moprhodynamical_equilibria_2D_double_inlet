@@ -37,7 +37,7 @@ if BOOL_Total_Model:
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
     
-    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
+    Uinnitalguess = np.load('Uphi24,405.npy')# np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
     
     
 elif BOOL_Only_Water_model:
@@ -63,9 +63,21 @@ elif BOOL_Only_Concentration_model:
 # the run
     
 if False:
-    Ufinal=optimize.newton_krylov(TM.F, Uinnitalguess, verbose=1)
+    Ufinal=optimize.newton_krylov(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)), verbose=1)
 else:
-    Ufinal=optimize.fsolve(TM.F, Uinnitalguess )
+    Ufinal=optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)))
+    #Ufinal=optimize.fsolve(TM.F, Uinnitalguess)
+    i=0
+    epsilon=10**(-7)
+    while TM.MaxNormOfU(TM.F(Ufinal))>epsilon:
+        print('\ fsolve loop \n i=%i \t ||F(U)||_max = %.2e < %.2e \n ' %(i,TM.MaxNormOfU(TM.F(Ufinal)),epsilon))
+        F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Ufinal))
+        print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
+        Ufinal=optimize.fsolve(TM.F, Ufinal-0.1*la.spsolve(TM.NumericalJacobian(Ufinal),TM.F(Ufinal)))
+        if i>=40:
+            break
+        i+=1
+        
     
 zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Ufinal)
 print('\t fsolve loop stoped \n \t ||F(U)||_max = %.2e \n' %(TM.MaxNormOfU(TM.F(Ufinal))))
