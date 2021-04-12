@@ -41,24 +41,24 @@ def MaxNormOfU(U):
  
 
 
-def F(U):
+def F(U, phi=P.phi):
     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
     
-    ans=np.concatenate((func.Fzetas(zetas,zetac,us,uc,vs,vc,C,h),
-                        func.Fzetac(zetas,zetac,us,uc,vs,vc,C,h),
-                           func.Fus(zetas,zetac,us,uc,vs,vc,C,h),
-                           func.Fuc(zetas,zetac,us,uc,vs,vc,C,h),
-                           func.Fvs(zetas,zetac,us,uc,vs,vc,C,h),
-                           func.Fvc(zetas,zetac,us,uc,vs,vc,C,h),
-                            func.FC(zetas,zetac,us,uc,vs,vc,C,h),
-                            func.Fh(zetas,zetac,us,uc,vs,vc,C,h)
+    ans=np.concatenate((func.Fzetas(zetas,zetac,us,uc,vs,vc,C,h,phi),
+                        func.Fzetac(zetas,zetac,us,uc,vs,vc,C,h,phi),
+                           func.Fus(zetas,zetac,us,uc,vs,vc,C,h,phi),
+                           func.Fuc(zetas,zetac,us,uc,vs,vc,C,h,phi),
+                           func.Fvs(zetas,zetac,us,uc,vs,vc,C,h,phi),
+                           func.Fvc(zetas,zetac,us,uc,vs,vc,C,h,phi),
+                            func.FC(zetas,zetac,us,uc,vs,vc,C,h,phi),
+                            func.Fh(zetas,zetac,us,uc,vs,vc,C,h,phi)
                            ))
 
     return ans
 
 I=func.I
 
-def NumericalJacobian(U):
+def NumericalJacobian(U,phi=P.phi):
     zetas,zetac,us,uc,vs,vc,C,h=np.array_split(U,8)
     print('\n \t Numerical Jacobian Inner loop')
     # J11=sp.csr_matrix(I.shape);J12=sp.csr_matrix(I.shape);J13=sp.csr_matrix(I.shape);J14=sp.csr_matrix(I.shape);J15=sp.csr_matrix(I.shape);J16=sp.csr_matrix(I.shape);
@@ -127,14 +127,14 @@ def NumericalJacobian(U):
             # J4[:,i] = np.array([(NJ_func(zetas,zetac,us,uc+h_small,vs,vc)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc))/(2*np.linalg.norm(h_small))]).T
             # J5[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs+h_small,vc)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc))/(2*np.linalg.norm(h_small))]).T
             # J6[:,i] = np.array([(NJ_func(zetas,zetac,us,uc,vs,vc+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small))/(2*np.linalg.norm(h_small))]).T
-            if BOOL_1: J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc,C,h)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            if BOOL_2: J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc,C,h)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            if BOOL_3: J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc,C,h)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            if BOOL_4: J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc,C,h)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc,C,h))/(2*np.linalg.norm(h_small))
-            if BOOL_5: J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc,C,h)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc,C,h))/(2*np.linalg.norm(h_small))
-            if BOOL_6: J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small,C,h)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small,C,h))/(2*np.linalg.norm(h_small))
-            if BOOL_7: J7[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C+h_small,h)-NJ_func(zetas,zetac,us,uc,vs,vc,C-h_small,h))/(2*np.linalg.norm(h_small))
-            if BOOL_8: J8[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C,h+h_small)-NJ_func(zetas,zetac,us,uc,vs,vc,C,h-h_small))/(2*np.linalg.norm(h_small))
+            if BOOL_1: J1[:,i] = (NJ_func(zetas+h_small,zetac,us,uc,vs,vc,C,h,phi)-NJ_func(zetas-h_small,zetac,us,uc,vs,vc,C,h,phi))/(2*np.linalg.norm(h_small))
+            if BOOL_2: J2[:,i] = (NJ_func(zetas,zetac+h_small,us,uc,vs,vc,C,h,phi)-NJ_func(zetas,zetac-h_small,us,uc,vs,vc,C,h,phi))/(2*np.linalg.norm(h_small))
+            if BOOL_3: J3[:,i] = (NJ_func(zetas,zetac,us+h_small,uc,vs,vc,C,h,phi)-NJ_func(zetas,zetac,us-h_small,uc,vs,vc,C,h,phi))/(2*np.linalg.norm(h_small))
+            if BOOL_4: J4[:,i] = (NJ_func(zetas,zetac,us,uc+h_small,vs,vc,C,h,phi)-NJ_func(zetas,zetac,us,uc-h_small,vs,vc,C,h,phi))/(2*np.linalg.norm(h_small))
+            if BOOL_5: J5[:,i] = (NJ_func(zetas,zetac,us,uc,vs+h_small,vc,C,h,phi)-NJ_func(zetas,zetac,us,uc,vs-h_small,vc,C,h,phi))/(2*np.linalg.norm(h_small))
+            if BOOL_6: J6[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc+h_small,C,h,phi)-NJ_func(zetas,zetac,us,uc,vs,vc-h_small,C,h,phi))/(2*np.linalg.norm(h_small))
+            if BOOL_7: J7[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C+h_small,h,phi)-NJ_func(zetas,zetac,us,uc,vs,vc,C-h_small,h,phi))/(2*np.linalg.norm(h_small))
+            if BOOL_8: J8[:,i] = (NJ_func(zetas,zetac,us,uc,vs,vc,C,h+h_small,phi)-NJ_func(zetas,zetac,us,uc,vs,vc,C,h-h_small,phi))/(2*np.linalg.norm(h_small))
          
     J=sp.bmat([
                 [sp.csr_matrix(J11), sp.csr_matrix(J12), sp.csr_matrix(J13), sp.csr_matrix(J14), sp.csr_matrix(J15), sp.csr_matrix(J16), sp.csr_matrix(J17), sp.csr_matrix(J18)],

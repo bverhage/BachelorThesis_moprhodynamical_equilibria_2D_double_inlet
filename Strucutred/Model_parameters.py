@@ -39,13 +39,13 @@ H1 = 11.7 # [ m ]
 A = 0.62 # [ m ]
 
 ''' Vlie inlet''' 
-H2 = H1 # 11.9 # [ m ]
+H2 =1*H1 # 11.9  # [ m ]
 
-A2 = A # 0.77 # [ m ]
+A2 = A # 0.77   # [ m ]
 
-Atilde = A2/A  # [ - ]
+Atilde = A2/A   # [ - ]
 
-phi = 24.40/180*np.pi # #54 [ - ]
+phi = 90/180*np.pi #54 [ - ]
 
 
 '''  Sediment  Parameters '''
@@ -102,7 +102,8 @@ def printparamters():
 
 def bedprofile(x,y):
 
-     return (1-H2/H1)*x
+     #return (1-H2/H1)*x
+    return -0.12*4*x*(x-1)
 
 def sin(x,y):
     return np.sin(x)

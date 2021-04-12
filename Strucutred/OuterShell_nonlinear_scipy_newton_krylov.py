@@ -36,8 +36,24 @@ if BOOL_Total_Model:
     #DeltaU=la.spsolve(TM_con.NumericalJacobian(Uinnitalguess_con),TM_con.F(Uinnitalguess_con))
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
+    Uinnitalguess = np.load('Uphi90.npy')
+    # Uinnitalguess = np.load('Uphi54.npy')
     
-    Uinnitalguess = np.load('Uphi24,405.npy')# np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
+    # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uinnitalguess)
+        
+    # zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # zetac = np.reshape(np.block([[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    
+    # us = np.reshape(np.block([[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # uc = np.reshape(np.block([[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    
+    # vs = np.reshape(np.block([[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # vc = np.reshape(np.block([[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    
+    # C = np.reshape(np.block([[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # h = np.reshape(np.block([[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    #Uinnitalguess = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
+    #Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
     
     
 elif BOOL_Only_Water_model:
@@ -64,17 +80,58 @@ elif BOOL_Only_Concentration_model:
     
 if False:
     Ufinal=optimize.newton_krylov(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)), verbose=1)
-else:
-    Ufinal=optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)))
-    #Ufinal=optimize.fsolve(TM.F, Uinnitalguess)
+else:   
+    #Ufinal=optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)))
+    Ufinal=optimize.fsolve(TM.F, Uinnitalguess)
     i=0
-    epsilon=10**(-7)
+    epsilon=10**(-9)
+    
     while TM.MaxNormOfU(TM.F(Ufinal))>epsilon:
+        
         print('\ fsolve loop \n i=%i \t ||F(U)||_max = %.2e < %.2e \n ' %(i,TM.MaxNormOfU(TM.F(Ufinal)),epsilon))
+        
         F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Ufinal))
+        
         print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
-        Ufinal=optimize.fsolve(TM.F, Ufinal-0.1*la.spsolve(TM.NumericalJacobian(Ufinal),TM.F(Ufinal)))
-        if i>=40:
+        
+        NJ=TM.NumericalJacobian(Ufinal)
+        DeltaU=la.spsolve(NJ,TM.F(Ufinal))
+    
+        Ufinal_hat10=Ufinal-1*DeltaU
+        Ufinal_hat075=Ufinal-0.75*DeltaU  
+        Ufinal_hat05=Ufinal-0.5*DeltaU  
+        Ufinal_hat025=Ufinal-0.25*DeltaU  
+        Ufinal_hat01=Ufinal-0.1*DeltaU  
+        Ufinal_hat001=Ufinal-0.01*DeltaU 
+        
+        F1=TM.MaxNormOfU(TM.F(Ufinal_hat10));
+        F2=TM.MaxNormOfU(TM.F(Ufinal_hat075));
+        F3=TM.MaxNormOfU(TM.F(Ufinal_hat05));
+        F4=TM.MaxNormOfU(TM.F(Ufinal_hat025));
+        F21=TM.MaxNormOfU(TM.F(Ufinal_hat01))
+        F22=TM.MaxNormOfU(TM.F(Ufinal_hat001))
+        if min(F1,F2,F3,F4,F21,F22)==F1:
+             Ufinal=Ufinal_hat10
+             print('\t a=1')
+        elif min(F1,F2,F3,F4,F21,F22)==F2:
+             Ufinal=Ufinal_hat075
+             print('\t a=0.75')
+        elif min(F1,F2,F3,F4,F21,F22)==F3:
+             Ufinal=Ufinal_hat05
+             print('\t a=0.5')
+        elif min(F1,F2,F3,F4,F21,F22)==F4:
+             Ufinal=Ufinal_hat025
+             print('\t a=0.25')
+        elif min(F1,F2,F3,F4,F21,F22)==F21:
+             Ufinal=Ufinal_hat01
+             print('\t a=0.1')  
+        elif min(F1,F2,F3,F4,F21,F22)==F22:
+             Ufinal=Ufinal_hat001
+             print('\t a=0.01') 
+             
+        Ufinal=optimize.fsolve(TM.F, Ufinal)
+        
+        if i>=200:
             break
         i+=1
         
@@ -516,23 +573,95 @@ if BOOL_Total_Model:
 
     plt.show()
     
-if False:
-    Num_eigenvalues=10
-    EIGvals, EIGvecs=sp.linalg.eigs(NJ,Num_eigenvalues)
+if True:
+    Num_eigenvalues=5
+    EIGvals, EIGvecs=sp.linalg.eigs(TM.NumericalJacobian(Ufinal),Num_eigenvalues,which='LR')
     print('\t \t ---------- EIGEN VALUE analysis on last jacobian---------  \t')
     print('\t  %i numerically determined eigen vals analysed ' %(Num_eigenvalues))
-    print('\t  largest real part of  %1.2e \t largest real part of  %1.2e ' %(np.max(EIGvals.real),np.min(EIGvals.real)))
+    print('\t  largest real part of  %1.2e \t largest real part of  %1.2e ' %(np.max(EIGvals),np.min(EIGvals)))
     
-    fig, (ax1,ax2) = plt.subplots(1,2)
+    # fig, (ax1,ax2) = plt.subplots(1,2)
     
-    ax1.boxplot(EIGvals.real)
-    ax1.set_title('real eigen values')
-    ax2.boxplot(EIGvals.imag)
-    ax2.set_title('imaginary eigen values')
+    # ax1.boxplot(EIGvals.real)
+    # ax1.set_title('real eigen values')
+    # ax2.boxplot(EIGvals.imag)
+    # ax2.set_title('imaginary eigen values')
     
-    generictotalplot(EIGvecs.real[:,0])
+    # generictotalplot(EIGvecs.real[:,0])
+
+    plot_information=np.array([[P.phi.real],[np.max(h.real)],[TM.MaxNormOfU(TM.F(Ufinal.real))],[np.max(EIGvals.real)]])
     
+    fig, (ax1,ax2,ax3)= plt.subplots(1,3)
+    ax1.plot(plot_information[0,:],plot_information[3,:],'k.')
+    ax1.set_xlabel('$\phi$')
+    ax1.set_ylabel('$\max(\lambda$)')
+    ax1.hlines(0,np.min(plot_information[:,0]),np.max(plot_information[:,0]),'k')
+    
+    ax2.plot(plot_information[0,:],plot_information[1,:],'k.')
+    ax2.set_xlabel('$\phi$')
+    ax2.set_ylabel('h')
+    
+    ax3.plot(plot_information[0,:],plot_information[2,:],'k.')
+    ax3.set_xlabel('$\phi$')
+    ax3.set_ylabel('$F(U)$')
+    
+if False:
+    #n_LIST=[90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34,32,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0]
+    n_LIST=[90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34]
+    LIST=[]
+    for n in n_LIST:
+        LIST.append(str('Uphi%i_Ny9.npy'%(n)))
+    harr    = P.reshape(h)
+    h_list=np.zeros((np.size(LIST),np.size(harr.mean(0))))
+    Carr    = P.reshape(C)
+    C_list=np.zeros((np.size(LIST),np.size(Carr.mean(0))))
+    
+    for i in range(np.size(LIST)):
+        U = np.load(LIST[i])
+        zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(U)
+        h_list[i,:]= P.reshape(h).mean(0)
+        C_list[i,:]= P.reshape(C).mean(0)
+        
+    fig, (ax1,ax2 )= plt.subplots(1,2)
+    imgh=ax1.imshow(h_list, interpolation='None', origin='lower',
+                    cmap=cm.gray, extent=(0, 1, np.max(n_LIST),np.min(n_LIST)),aspect='auto')
+    #plt.set_ylabel([np.max(n_LIST),np.min(n_LIST)])
+    levels = np.arange(np.min(h_list), np.max(h_list), (np.max(h_list)-np.min(h_list))/15)
+    CS = ax1.contour(h_list, levels, origin='lower', cmap='gist_yarg',
+                    linewidths=2, extent=(0, 1, np.max(n_LIST),np.min(n_LIST)))
+    ax1.clabel(CS, levels,  # label every second level
+              inline=1, fmt='%1.2f', fontsize=14)
+    ax1.set_title('steady-state bed profile $h$ vs $\Delta\phi$')
 
     
+    # We can still add a colorbar for the image, too.
+    CBI = fig.colorbar(imgh, orientation='horizontal',ax=ax1)
     
+    imgC=ax2.imshow(C_list, interpolation='None', origin='lower',
+                    cmap=cm.gray, extent=(0, 1, np.max(n_LIST),np.min(n_LIST)),aspect='auto')
+    #plt.set_ylabel([np.max(n_LIST),np.min(n_LIST)])
+    levels = np.arange(np.min(C_list), np.max(C_list), (np.max(C_list)-np.min(C_list))/15)
+    CS = ax2.contour(C_list, levels, origin='lower', cmap='gist_yarg',
+                    linewidths=2, extent=(0, 1, np.max(n_LIST),np.min(n_LIST)))
+    ax2.clabel(CS, levels,  # label every second level
+              inline=1, fmt='%1.2f', fontsize=14)
+    ax2.set_title('steady-state bed profile $C$ vs $\Delta\phi$')
+
+    
+    # We can still add a colorbar for the image, too.
+    CBI = fig.colorbar(imgC, orientation='horizontal',ax=ax2)
+    
+    fig, (ax1)= plt.subplots(1)
+    plt.plot(n_LIST,h_list.max(1),'b*')
+    plt.plot( np.flip(np.arange(92-2*np.load('h_list_Ny3.npy').shape[0],92,2)),np.load('h_list_Ny3.npy').max(1),'k.')
+    plt.plot( np.flip(np.arange(92-2*np.load('h_list_Ny1.npy').shape[0],92,2)),np.load('h_list_Ny1.npy').max(1),'r.')
+    plt.xlabel('$\phi$')
+    plt.ylabel('h')
+
+if False:
+    fig, (ax1)= plt.subplots(1)
+    plt.plot( np.flip(np.arange(92-2*np.load('h_list_Ny3.npy').shape[0],92,2)),np.load('h_list_Ny3.npy').max(1),'k.')
+    plt.plot( np.flip(np.arange(92-2*np.load('h_list_Ny1.npy').shape[0],92,2)),np.load('h_list_Ny1.npy').max(1),'r.')
+    plt.xlabel('$\phi$')
+    plt.ylabel('h')
 print('\t ------------------------------')

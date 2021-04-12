@@ -315,7 +315,7 @@ def beta(h):
     return 1/(1-np.exp(-P.lambda_d*(1-h)))
 
 
-def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
+def Fzetas(zetas,zetac,us,uc,vs,vc,C,h , phi):
     ''' interior '''
     
     fzetas =-zetas-(1-h)*(LxD*uc+LyD*vc)+uc*(LxD*h)+vc*(LyD*h)
@@ -334,7 +334,7 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
     'x=1' 
 
     fzetas += (P.EastBoundary+P.NECorner+P.SECorner)*(
-                        -zetas + P.Atilde*np.sin(P.phi)
+                        -zetas + P.Atilde*np.sin(phi)
                         )
 
     ''' South Boundary '''
@@ -357,7 +357,7 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h):
     #fzetas += cornerfix(zetas)
     return fzetas
 
-def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
+def Fzetac(zetas,zetac,us,uc,vs,vc,C,h, phi):
     ''' interior '''
     fzetac =-zetac+(1-h)*(LxD*us+LyD*vs)-us*(LxD*h)-vs*(LyD*h)
     
@@ -372,7 +372,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
     'x=1' 
 
     fzetac += (P.EastBoundary+P.NECorner+P.SECorner)*(
-                                -zetac + P.Atilde*np.cos(P.phi)
+                                -zetac + P.Atilde*np.cos(phi)
                             )
     ''' South Boundary '''
     'y=0' 
@@ -393,7 +393,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h):
     return fzetac
 
 
-def Fus(zetas,zetac,us,uc,vs,vc,C,h):
+def Fus(zetas,zetac,us,uc,vs,vc,C,h, phi):
     ''' interior '''
     fus   = -us -np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas
     
@@ -451,7 +451,7 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h):
     #                   )
     return fus
          
-def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
+def Fuc(zetas,zetac,us,uc,vs,vc,C,h,  phi):
     ''' interior '''
     fuc   = -uc  +np.divide(P.r, 1-h)*us +P.lambda_L**(2)*LxD*zetac
     
@@ -503,7 +503,7 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h):
     #fuc += cornerfix(uc)
     return fuc
 
-def Fvs(zetas,zetac,us,uc,vs,vc,C,h):
+def Fvs(zetas,zetac,us,uc,vs,vc,C,h,  phi):
     ''' interior '''
     fvs   = -vs  -np.divide(P.r, 1 - h)*vc +(P.Lx/P.Ly)**2*-P.lambda_L**(2)*LyD*zetas
     
@@ -544,7 +544,7 @@ def Fvs(zetas,zetac,us,uc,vs,vc,C,h):
     #                     )
     return fvs
 
-def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
+def Fvc(zetas,zetac,us,uc,vs,vc,C,h, phi):
     ''' interior '''
     fvc  = -vc   +np.divide(P.r, 1-h)*vs +(P.Lx/P.Ly)**2*P.lambda_L**(2)*LyD*zetac
     
@@ -590,15 +590,15 @@ def Fvc(zetas,zetac,us,uc,vs,vc,C,h):
     #                     )
     return fvc
 
-def FC(zetas,zetac,us,uc,vs,vc,C,h):
+def FC(zetas,zetac,us,uc,vs,vc,C,h, phi):
     ''' interior '''
     fC  =           P.a*P.k*(
                             A_x*C+(P.Lx/P.Ly)**2*A_y*C 
-                                    # +0*P.lambda_d*(
-                                    #             C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )
-                                    #             + beta(h)*( LxD*h*LxD*C + (P.Lx/P.Ly)**2*LyD*h*LyD*C)
-                                    #             +C*beta(h)*( A_x*h + (P.Lx/P.Ly)**2*A_y*h )
-                                    #             )
+                                     # +1*P.lambda_d*(
+                                     #             C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )
+                                     #             + beta(h)*( LxD*h*LxD*C + (P.Lx/P.Ly)**2*LyD*h*LyD*C)
+                                     #             +C*beta(h)*( A_x*h + (P.Lx/P.Ly)**2*A_y*h )
+                                     #             )
                             )
     fC += 0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc))-1*beta(h)*C
     
@@ -695,7 +695,7 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h):
     #                   -1*beta(1-P.H2/P.H1)*C+0.5*(us*us+uc*uc+0*(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
     return fC
 
-def Fh(zetas,zetac,us,uc,vs,vc,C,h):
+def Fh(zetas,zetac,us,uc,vs,vc,C,h,  phi):
     # if N=0 (how it should be) the system is not stable
     # 
     N=1#2.7
@@ -707,11 +707,11 @@ def Fh(zetas,zetac,us,uc,vs,vc,C,h):
     else:
         fh  += (1-10**(-N))*P.delta_s*P.a*P.k*(
                             A_x*C+(P.Lx/P.Ly)**2*A_y*C 
-                                    # + 0*P.lambda_d*(
-                                    #             C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )
-                                    #             + beta(h)*( LxD*h*LxD*C + (P.Lx/P.Ly)**2*LyD*h*LyD*C)
-                                    #             +C*beta(h)*( A_x*h + (P.Lx/P.Ly)**2*A_y*h )
-                                    #             )
+                                     # + 1*P.lambda_d*(
+                                     #             C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )
+                                     #             + beta(h)*( LxD*h*LxD*C + (P.Lx/P.Ly)**2*LyD*h*LyD*C)
+                                     #             +C*beta(h)*( A_x*h + (P.Lx/P.Ly)**2*A_y*h )
+                                     #             )
                             )
     fh = P.Interior*fh
     

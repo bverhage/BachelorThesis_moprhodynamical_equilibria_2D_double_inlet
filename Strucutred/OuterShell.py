@@ -36,7 +36,25 @@ if BOOL_Total_Model:
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
     from scipy import optimize
-    Uinnitalguess = np.load('Uphi69.npy')#np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
+    #Uinnitalguess = np.load('Uphi90.npy')
+    # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uinnitalguess)
+        
+    # zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # zetac = np.reshape(np.block([[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    
+    # us = np.reshape(np.block([[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # uc = np.reshape(np.block([[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    
+    # vs = np.reshape(np.block([[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # vc = np.reshape(np.block([[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    
+    # C = np.reshape(np.block([[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # h = np.reshape(np.block([[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))]]),P.ICzeta0.shape)
+    # Uinnitalguess = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
+    
+    
+    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
+    
     #Uinnitalguess = optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)) )
     
     
@@ -66,15 +84,45 @@ NJ=TM.NumericalJacobian(Uinnitalguess)
 def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     global NJ
     print('\n \t  Starting Newton Rapson Method \t \n')
-    epsilon=10**(-8)
+    epsilon=10**(-4)
     
     Uiend=np.copy(Uinnitalguess)
     
     i=0
     
     DeltaU=la.spsolve(NJ,TM.F(Uiend))
-    Uiend=Uiend-DeltaU
-
+    
+    Uiend_hat10=Uiend-1*DeltaU
+    Uiend_hat075=Uiend-0.75*DeltaU  
+    Uiend_hat05=Uiend-0.5*DeltaU  
+    Uiend_hat025=Uiend-0.25*DeltaU  
+    Uiend_hat01=Uiend-0.1*DeltaU  
+    Uiend_hat001=Uiend-0.01*DeltaU 
+    
+    F1=TM.MaxNormOfU(TM.F(Uiend_hat10));
+    F2=TM.MaxNormOfU(TM.F(Uiend_hat05));
+    F3=TM.MaxNormOfU(TM.F(Uiend_hat01));
+    F4=TM.MaxNormOfU(TM.F(Uiend_hat001));
+    F21=TM.MaxNormOfU(TM.F(Uiend_hat075))
+    F22=TM.MaxNormOfU(TM.F(Uiend_hat025))
+    if min(F1,F2,F3,F4,F21,F22)==F1:
+         Uiend=Uiend_hat10
+         print('\t a=1')
+    elif min(F1,F2,F3,F4,F21,F22)==F2:
+         Uiend=Uiend_hat05
+         print('\t a=0.5')
+    elif min(F1,F2,F3,F4,F21,F22)==F3:
+         Uiend=Uiend_hat01
+         print('\t a=0.1')
+    elif min(F1,F2,F3,F4,F21,F22)==F4:
+         Uiend=Uiend_hat001
+         print('\t a=0.01')
+    elif min(F1,F2,F3,F4,F21,F22)==F21:
+         Uiend=Uiend_hat075
+         print('\t a=0.75')  
+    elif min(F1,F2,F3,F4,F21,F22)==F22:
+         Uiend=Uiend_hat025
+         print('\t a=0.25') 
     print('\t Newton Rapson loop \n i=0 \t ||F(U)||_max = %.2e < %.2e \n ' %(TM.MaxNormOfU(TM.F(Uiend)),epsilon))
     F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Uiend))
     print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
@@ -106,13 +154,57 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
              Stopcondition=1
              NJ=TM.NumericalJacobian(Uiend)
              DeltaU=la.spsolve(NJ,TM.F(Uiend))
-             Uiend=Uiend-DeltaU
+             
+             Uiend_hat10=Uiend-1*DeltaU
+             Uiend_hat075=Uiend-0.75*DeltaU  
+             Uiend_hat05=Uiend-0.5*DeltaU  
+             Uiend_hat025=Uiend-0.25*DeltaU  
+             Uiend_hat01=Uiend-0.1*DeltaU  
+             Uiend_hat001=Uiend-0.01*DeltaU 
+             
+             F1=TM.MaxNormOfU(TM.F(Uiend_hat10));
+             F2=TM.MaxNormOfU(TM.F(Uiend_hat05));
+             F3=TM.MaxNormOfU(TM.F(Uiend_hat01));
+             F4=TM.MaxNormOfU(TM.F(Uiend_hat001));
+             F21=TM.MaxNormOfU(TM.F(Uiend_hat075))
+             F22=TM.MaxNormOfU(TM.F(Uiend_hat025))
+             if min(F1,F2,F3,F4,F21,F22)==F1:
+                  Uiend=Uiend_hat10
+                  print('\t a=1')
+             elif min(F1,F2,F3,F4,F21,F22)==F2:
+                  Uiend=Uiend_hat05
+                  print('\t a=0.5')
+             elif min(F1,F2,F3,F4,F21,F22)==F3:
+                  Uiend=Uiend_hat01
+                  print('\t a=0.1')
+             elif min(F1,F2,F3,F4,F21,F22)==F4:
+                  Uiend=Uiend_hat001
+                  print('\t a=0.01')
+             elif min(F1,F2,F3,F4,F21,F22)==F21:
+                  Uiend=Uiend_hat075
+                  print('\t a=0.75')  
+             elif min(F1,F2,F3,F4,F21,F22)==F22:
+                  Uiend=Uiend_hat025
+                  print('\t a=0.25') 
+             # F_5=100    
+             # for a in np.flip(np.linspace(0.001,1,50)):
+             #     F_t=TM.MaxNormOfU(TM.F(Uiend-a*DeltaU))
+             #     if F_t < F_5  :
+             #         Uiend_hat01=Uiend-a*DeltaU  
+             #         F_5=F_t
+             # print('\t a=',a)
+                 
+                 
+             if min(F1,F2,F3,F4) > Check:
+                 print('\n \t --- WARNING GOING THE WRONG WAY ---')
+                 
              print('\t Newton Rapson loop \n i=%i \t ||F(U)||_max = %.2e < %.2e \n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
          zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uiend)
          
          F_zetas,F_zetac,F_us,F_uc,F_vs,F_vc,F_C,F_h=TM.split_animation(TM.F(Uiend))
          print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
-
+         EIGvals, EIGvecs=np.linalg.eig(NJ.toarray())
+         print(' \n with max eigen value %3.2f \n ' %(np.max(EIGvals)))
              
          if np.min(C)<0 :
             print('\n ------- \t  Negative Concentration! \t ---------\n')
@@ -129,12 +221,15 @@ def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
 
          elif Check<=epsilon:
              print('\t Newton Rapson loop stoped at \n i=%i \t ||F(U)||_max = %.2e < %.2e\n' %(i,TM.MaxNormOfU(TM.F(Uiend)),epsilon))
+             
+
+             
              print ('\n')
              Stopcondition=0
              break
              
              
-         if i>50:
+         if i>500:
             break
         
 
@@ -528,6 +623,9 @@ Animation2()
 Candhplots()
 
 Sediment_transport_plot()
+
+plt.plot(sp.linalg.eigs(NJ.toarray(),k=NJ.shape-2,which='LR')[0])
+
 
 if BOOL_Total_Model:
     X = np.linspace(0, 1, P.Nx+1)
