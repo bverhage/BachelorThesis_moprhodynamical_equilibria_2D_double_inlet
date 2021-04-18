@@ -36,7 +36,7 @@ if BOOL_Total_Model:
     #DeltaU=la.spsolve(TM_con.NumericalJacobian(Uinnitalguess_con),TM_con.F(Uinnitalguess_con))
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
-    Uinnitalguess = np.load('Uphi90.npy')
+    Uinnitalguess = np.load('Uphi90_Nx60.npy')
     # Uinnitalguess = np.load('Uphi54.npy')
     
     # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uinnitalguess)
@@ -84,7 +84,7 @@ else:
     #Ufinal=optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)))
     Ufinal=optimize.fsolve(TM.F, Uinnitalguess)
     i=0
-    epsilon=10**(-9)
+    epsilon=10**(-8)
     
     while TM.MaxNormOfU(TM.F(Ufinal))>epsilon:
         
@@ -607,10 +607,10 @@ if True:
     
 if False:
     #n_LIST=[90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34,32,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0]
-    n_LIST=[90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34]
+    n_LIST=np.flip(np.arange(26,90+1,1)) #[90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34]
     LIST=[]
     for n in n_LIST:
-        LIST.append(str('Uphi%i_Ny9.npy'%(n)))
+        LIST.append(str('Uphi%i_Nx60_test.npy'%(n)))
     harr    = P.reshape(h)
     h_list=np.zeros((np.size(LIST),np.size(harr.mean(0))))
     Carr    = P.reshape(C)

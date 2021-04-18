@@ -36,7 +36,7 @@ if BOOL_Total_Model:
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
     from scipy import optimize
-    #Uinnitalguess = np.load('Uphi90.npy')
+    Uinnitalguess = np.load('Uphi90_Nx60_test.npy')
     # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uinnitalguess)
         
     # zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
@@ -53,7 +53,7 @@ if BOOL_Total_Model:
     # Uinnitalguess = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
     
     
-    Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
+    #Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
     
     #Uinnitalguess = optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)) )
     
@@ -84,7 +84,7 @@ NJ=TM.NumericalJacobian(Uinnitalguess)
 def NewtonRapsonInnerloop(Uinnitalguess:'np.ndarray'):
     global NJ
     print('\n \t  Starting Newton Rapson Method \t \n')
-    epsilon=10**(-4)
+    epsilon=10**(-8)
     
     Uiend=np.copy(Uinnitalguess)
     
@@ -624,7 +624,7 @@ Candhplots()
 
 Sediment_transport_plot()
 
-plt.plot(sp.linalg.eigs(NJ.toarray(),k=NJ.shape-2,which='LR')[0])
+#plt.plot(sp.linalg.eigs(NJ.toarray(),k=NJ.shape-2,which='LR')[0])
 
 
 if BOOL_Total_Model:
@@ -670,23 +670,392 @@ if BOOL_Total_Model:
 
     plt.show()
     
+
+    
+
+if True:
+    
+
+    ''' water height '''
+    
+    fig, ax = plt.subplots()
+    
+    corretion_constant=P.A
+    
+    ax.plot(corretion_constant*P.reshape(zetac).mean(0),color='slategray', linewidth=2.3, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(zetas).mean(0),color='royalblue', linewidth=2.3, linestyle='dashed')
+    
+    ax.legend(['$\zeta^{sin}$','$\zeta^{cos}$'])
+    
+    ax.set_xlabel('position in channel [km]')
+    
+    ax.set_ylabel('surface elevation [m]')
+    
+    plt.tight_layout()
+    
+    ''' water flow x-direction '''
+    fig, ax = plt.subplots()
+    
+    corretion_constant=-P.U_const
+    
+    ax.plot(corretion_constant*P.reshape(us).mean(0),color='slategray', linewidth=2.3, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(uc).mean(0),color='royalblue', linewidth=2.3, linestyle='dashed')
+    ax.legend(['$u^{sin}$','$u^{cos}$'])
+    
+    ax.set_xlabel('water depth [m]')
+    ax.set_ylabel('flow velocity [m/s]')
+    
+    plt.tight_layout()
+    
+    ''' water flow y-direction '''
+    
+    fig, ax = plt.subplots()
+    
+    ax.plot(P.U_const*P.Ly/P.Lx*P.reshape(vs).mean(0),color='slategray', linewidth=2.3, linestyle='-')
+    ax.plot(P.U_const*P.Ly/P.Lx*P.reshape(vc).mean(0),color='royalblue', linewidth=2.3, linestyle='dashed')
+    ax.legend(['$v^s$','$v^c$'])
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('transverse flow velocity [m/s]')
+    
+    plt.tight_layout()
+    
+    
+    ''' transport  and transport ''' 
+    # check eenheden
+    
+    un_scalded_C=P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*C
+    
+    un_scalded_h=P.H1*h
+    
+    suspended_Sediment_transport_x = P.k_h*F.LxD/P.Lx*C*1000
+    
+    suspended_Sediment_transport_y = P.a*P.k_h*P.Lx/P.Ly*F.LyD*un_scalded_C
+   
+    bedload_Sediment_transport_x = P.rho_s*(1-P.p)*P.mu_hat*F.LxD/P.Lx*un_scalded_h*1000
+    
+    bedload_Sediment_transport_y = P.Mutilde*P.Lx/P.Ly*F.LyD*h
+
+    
+    fig, ax = plt.subplots()
+
+    
+    ax.plot(P.reshape(suspended_Sediment_transport_x).mean(0)[1:-1],color='firebrick', linewidth=1.7, linestyle='-.')
+    
+    #ax.plot(P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*P.reshape(suspended_Sediment_transport_y).mean(0)[1:-1],'--k')
+    
+    ax.plot(P.reshape(bedload_Sediment_transport_x).mean(0)[1:-1],color='chocolate', linewidth=1.7 , linestyle='dashed')
+    
+    ax.plot(P.reshape( suspended_Sediment_transport_x + bedload_Sediment_transport_x ).mean(0)[1:-1],color='black', linewidth=2.3, linestyle='-')
+    #ax.plot(P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*P.reshape(bedload_Sediment_transport_y).mean(0)[1:-1],'--r')
+    
+    ax.legend(['suspended','bedload','total'])
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('sediment transport [g/ms]')
+    
+    
+    
+    # ax2=ax.twinx()
+    # ax2.plot(P.reshape(-P.delta_s*(-1*F.beta(h)*C)-P.delta_s*(0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))).mean(0)[1:-1])
+    # ax2.set_ylabel("sediment concentration [??]",color="darkcyan",fontsize=14)
+    # ax2.plot(P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*P.reshape(C).mean(0),color='darkcyan', linewidth=2.3, linestyle='-')
+    
+    plt.tight_layout()
+
+
+
+    ''' concentration '''
+    fig, ax = plt.subplots()
+    
+    
+    
+    ax.plot(P.reshape(un_scalded_C).mean(0),color='black', linewidth=2.3, linestyle='-')
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('suspended sediment concentration [kg/m]')
+    plt.tight_layout()
+    
+    
+    
+    ''' bed topology ''' 
+    fig, ax = plt.subplots()
+    
+    ax.plot(P.H1-P.H1*P.reshape(h).mean(0),color='black', linewidth=2.3, linestyle='-')
+    plt.gca().invert_yaxis()
+    #ax.plot(P.A*P.reshape(zetac).mean(0),'k')
+    #ax.plot(P.A*P.reshape(zetas).mean(0),'--k')
+    
+    #ax.legend(['$h$','$\zeta^s$','$\zeta^c$'])
+    
+    ax.set_xlabel(' position in channel [km]')
+    ax.set_ylabel(' water depth [m] ')
+    
+    plt.tight_layout()
+    
+    ''' error '''
+    
+    fig, ax = plt.subplots()
+    
+    ax.plot(P.reshape(F_zetas).mean(0),color='silver',marker=".", linewidth=0, linestyle='-')
+    ax.plot(P.reshape(F_zetac).mean(0),color='silver',marker=".", linewidth=0, linestyle='-')
+    ax.plot(P.reshape(F_us).mean(0),color='cornflowerblue',marker=".", linewidth=0, linestyle='-')
+    ax.plot(P.reshape(F_uc).mean(0),color='cornflowerblue',marker=".", linewidth=0, linestyle='-')
+    ax.plot(P.reshape(F_C).mean(0),color='peru',marker=".", linewidth=0, linestyle='-')
+    ax.plot(P.reshape(F_h).mean(0),color='crimson',marker=".",linewidth=0, linestyle='-')
+    #ax.plot(P.A*P.reshape(zetac).mean(0),'k')
+    #ax.plot(P.A*P.reshape(zetas).mean(0),'--k')
+    
+    ax.legend(['$F(\zeta^{\sin})$','$F(\zeta^{\cos})$','$F(u^{\sin})$','$F(u^{\cos})$','$F(\mathcal{C})$','$F(h)$'])
+    
+    ax.set_ylabel(' distance from equilibrium ')
+    ax.set_xlabel('position in channel [km]')
+    
+    plt.tight_layout()
+    
+    
+if True:
+    
+    
+    fig, ax = plt.subplots()
+    
+    corretion_constant=P.A
+    
+    #IMGcos = ax.plot(corretion_constant*P.reshape(zetac).mean(0),color='slategray', linewidth=2.3, linestyle='-')
+    
+    ax.plot(corretion_constant*P.reshape(zetas).mean(0),color='royalblue', linewidth=2.3, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(-zetas).mean(0),color='peru', linewidth=2.3, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(-zetac).mean(0),color='peru', linewidth=2.3, linestyle='dashed')
+    ax.plot(corretion_constant*P.reshape(zetac).mean(0),color='royalblue', linewidth=2.3, linestyle='dashed')
+    ax.legend(['$\zeta^{sin}$','$-\zeta^{sin}$','$\zeta^{cos}$','$-\zeta^{cos}$'])
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('surface elevation [m]')
+    
+    plt.text(1, np.max(corretion_constant*P.reshape(zetac).mean(0)), 'high tide',color='royalblue')
+    plt.text(1, -np.max(corretion_constant*P.reshape(zetac).mean(0)), 'low tide',color='peru')
+    
+    plt.text(P.Nx-10, np.max(corretion_constant*P.reshape(zetas).mean(0)), 'first quarter',color='royalblue')
+    plt.text(P.Nx-10, -np.max(corretion_constant*P.reshape(zetas).mean(0)), 'third quarter',color='peru')
+    plt.tight_layout()
+    
+    # t=0
+    # Tend=1
+    # NSteps=24*10
+    # anim_dt=Tend/NSteps
+        
+
+    # def animate(frame):
+    #     '''
+    #     This function updates the solution array
+    #     '''
+    #     t = (frame+1)*anim_dt 
+
+
+    #     zeta=zetas*np.sin(2*np.pi*t)+zetac*np.cos(2*np.pi*t)
+        
+            
+    #     IMGcos[0].set_ydata(corretion_constant*P.reshape(zeta).mean(0))       
+      
+                                                
+    #     return ax
+        
+    #     # figure animation
+        
+    # animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
+
+
+    ''' water flow x-direction '''
+    fig, ax = plt.subplots()
+    
+    corretion_constant=P.U_const
+    
+    #IMGcos = ax.plot(corretion_constant*P.reshape(uc).mean(0),color='slategray', linewidth=2.3, linestyle='-')
+    
+    ax.plot(corretion_constant*P.reshape(us).mean(0),color='royalblue', linewidth=2.3, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(-us).mean(0),color='peru', linewidth=2.3, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(-uc).mean(0),color='peru', linewidth=2.3, linestyle='dashed')
+    ax.plot(corretion_constant*P.reshape(uc).mean(0),color='royalblue', linewidth=2.3, linestyle='dashed')
+    ax.legend(['$u^{sin}$','$-u^{sin}$','$u^{cos}$','$-u^{cos}$'])
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('flow velocity [m/s]')
+    
+    plt.text(1, np.max(corretion_constant*P.reshape(uc).mean(0)), 'high tide',color='royalblue')
+    plt.text(1, -np.max(corretion_constant*P.reshape(uc).mean(0)), 'low tide',color='peru')
+    
+    plt.text(P.Nx-10, np.max(corretion_constant*P.reshape(us).mean(0)), 'first quarter',color='royalblue')
+    plt.text(P.Nx-10, -np.max(corretion_constant*P.reshape(us).mean(0)), 'third quarter',color='peru')
+    plt.tight_layout()
+    
+    # t=0
+    # Tend=1
+    # NSteps=24*10
+    # anim_dt=Tend/NSteps
+        
+
+    # def animate(frame):
+    #     '''
+    #     This function updates the solution array
+    #     '''
+    #     t = (frame+1)*anim_dt 
+
+
+    #     u=us*np.sin(2*np.pi*t)+uc*np.cos(2*np.pi*t)
+        
+            
+    #     IMGcos[0].set_ydata(corretion_constant*P.reshape(u).mean(0))       
+      
+                                                
+    #     return ax
+        
+    #     # figure animation
+        
+    # animation.FuncAnimation(fig , animate  , interval=50 , repeat=True)
+
+    ''' water flow x-direction '''
+    fig, ax = plt.subplots()
+    
+    corretion_constant=P.U_const**2
+    
+    #IMGcos = ax.plot(corretion_constant*P.reshape(uc).mean(0),color='slategray', linewidth=2.3, linestyle='-')
+    
+    #ax.plot(corretion_constant*P.reshape(us*us).mean(0),color='royalblue', linewidth=2.3, linestyle=':')
+    #ax.plot(corretion_constant*P.reshape(uc*us).mean(0),color='slategray', linewidth=2.3, linestyle='-.')
+    #ax.plot(corretion_constant*P.reshape(uc*uc).mean(0),color='peru', linewidth=2.3, linestyle='dashed')
+    
+    ax.plot( P.delta_s*P.reshape(0.5*(us*us+uc*uc)-F.beta(h)*C).mean(0),color='black', linewidth=2.3, linestyle='-')
+    
+   # ax.legend(['$u^{sin}u^{sin}$','$u^{sin}u^{cos}$','$u^{cos}u^{cos}$'])
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('flow velocity square [$m^2/s^2$]')
+    
+    plt.tight_layout()
+
 if False:
-    Num_eigenvalues=10
-    EIGvals, EIGvecs=sp.linalg.eigs(NJ,Num_eigenvalues)
+    Num_eigenvalues=NJ.shape[0]-2
+    EIGvals, EIGvecs=sp.linalg.eigs(NJ,Num_eigenvalues,which='SR')
     print('\t \t ---------- EIGEN VALUE analysis on last jacobian---------  \t')
     print('\t  %i numerically determined eigen vals analysed ' %(Num_eigenvalues))
     print('\t  largest real part of  %1.2e \t largest real part of  %1.2e ' %(np.max(EIGvals.real),np.min(EIGvals.real)))
     
     fig, (ax1,ax2) = plt.subplots(1,2)
     
-    ax1.boxplot(EIGvals.real)
+    ax1.plot(EIGvals.real,'.k')
     ax1.set_title('real eigen values')
-    ax2.boxplot(EIGvals.imag)
+    ax2.plot(EIGvals.imag,'.k')
     ax2.set_title('imaginary eigen values')
     
-    generictotalplot(EIGvecs.real[:,0])
+    EIGvals[np.where(np.min(np.abs(EIGvals.real))==np.abs(EIGvals.real))].real
+    
+    
+    figh, axh = plt.subplots()
+    axh.set_xlabel('$x$')
+    axh.set_ylabel('$\overline{h}$')
+    plt.tight_layout()
+    
+    figC, axC = plt.subplots()
+    axC.set_xlabel('$x$')
+    axC.set_ylabel('$\overline{\mathcal{C}}$')
+    plt.tight_layout()
+    
+    figzeta, axzeta = plt.subplots()
+    axzeta.set_xlabel('$x$')
+    axzeta.set_ylabel('$\overline{\zeta}$')
+    axzeta.legend(['$\zeta^s$','$\zeta^c$'])
+    plt.tight_layout()
+    
+    figu, axu = plt.subplots()
+    axu.legend(['$u^s$','$u^c$'])
+    axu.set_xlabel('$x$')
+    axu.set_ylabel('$\overline{u}$')
+    plt.tight_layout()
+    
+    figv, axv = plt.subplots()
+    axv.legend(['$v^s$','$v^c$'])
+        
+    axv.set_xlabel('$x$')
+    axv.set_ylabel('$\overline{v}$')
+    plt.tight_layout()
+    
+    figT, axT = plt.subplots()
+    axT.legend(['$x-transport$','$y-transport$'])
+        
+    axT.set_xlabel('$x$')
+    axT.set_ylabel('$transport$')
+    plt.tight_layout()
+    
+    
+    
+    for i in range(Num_eigenvalues):
+        eig_zetas,eig_zetac,eig_us,eig_uc,eig_vs,eig_vc,eig_C,eig_h=TM.split_animation(EIGvecs[np.where(np.min(np.abs(EIGvals.real))==np.abs(EIGvals.real))][0].real)
+        
+        axh.plot(P.reshape(eig_h).mean(0),'k')
+     
+        axC.plot(P.reshape(eig_C).mean(0),'k')
+        
+        axzeta.plot(P.reshape(eig_zetac).mean(0),'b')
+        axzeta.plot(P.reshape(eig_zetas).mean(0),'--r')
+        
+        
+        axu.plot(P.reshape(eig_us).mean(0),'b')
+        axu.plot(P.reshape(eig_uc).mean(0),'--r')
+    
+    
+        axv.plot(P.reshape(eig_vs).mean(0),'b')
+        axv.plot(P.reshape(eig_vc).mean(0),'--r')
+
+        eig_Sediment_transport_x = -P.Mutilde*P.Lx/P.Ly*F.LxD*eig_h +P.delta_s*P.a*P.k*((P.Lx/P.Ly*F.LxD*eig_C+P.lambda_d*C*F.beta(eig_h)*F.LxD*eig_h))
+        eig_Sediment_transport_y = -P.Mutilde*P.Lx/P.Ly*F.LyD*eig_h +P.delta_s*P.a*P.k*((P.Lx/P.Ly*F.LyD*eig_C+P.lambda_d*C*F.beta(eig_h)*F.LyD*eig_h))
+        
+        axT.plot(P.reshape(eig_Sediment_transport_x).mean(0)[1:-1],'b')
+        axT.plot(P.reshape(eig_Sediment_transport_y).mean(0)[1:-1],'--r')
+
+
+
+if True:
+
+    t=0
+    Tend=2*np.pi
+    NSteps=24*10
+
+    t=np.linspace(0,Tend,NSteps)
+    
+    u=np.kron(np.cos(t),np.array([P.reshape(uc).mean(0)]).T)+np.kron(np.sin(t),np.array([P.reshape(us).mean(0)]).T)
+    
+    fig, ax = plt.subplots()
+    im = ax.imshow(u.T, interpolation='None', origin='lower',
+                    cmap=cm.bwr, extent=(0, 60, 0,23.45),aspect='auto')
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('time [h]')
+    #levels = np.arange(np.min(u), np.max(u), (np.max(u)-np.min(u))/9)
+    #CS = ax.contour(u.T, levels, origin='lower', cmap='gist_yarg',linewidths=2, extent=(0, 60, 0, 1))
+    
+    
+    #ax.clabel(CS, levels, inline=1, fmt='%1.2f', fontsize=14)
     
 
     
+    # We can still add a colorbar for the image, too.
+    CBI = fig.colorbar(im, orientation='horizontal')
+    
+if False:
+    import Model_Numerical_Jacobian_total_model_1D as TM;                
+    NJ=TM.NumericalJacobian(Ufinal); 
+    EIGvals,EIGvecs=np.linalg.eig(NJ.toarray()); 
+    zetas,zetac,us,uc,C,h=np.array_split(EIGvecs[:,0].real,6);  
+    fig, ax = plt.subplots()
+    ax.plot(EIGvals.real,'.')
+    
+    fig, ax  = plt.subplots()
+    
+    ax.plot(P.reshape(zetas).mean(0),'g.');
+    ax.plot(P.reshape(zetac).mean(0),'.');
+    ax.plot(P.reshape(us).mean(0),'y.');
+    ax.plot(P.reshape(uc).mean(0),'.');
+    ax.plot(P.reshape(C).mean(0),'k.');
+    ax.plot(P.reshape(h).mean(0),'b.')
     
 print('\t ------------------------------')

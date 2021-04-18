@@ -37,12 +37,12 @@ if BOOL_Total_Model:
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
     #n_LIST=np.array([90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34,32,30,28,26])#,24,22,20,18,16,14,12,10,8,6,4,2,0])
-    n_LIST=np.flip(np.arange(0,91,1))
-    #n_LIST=np.array([9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24])
+    n_LIST=np.arange(90,180,1)#np.flip()
+    n_LIST=np.array([70,69,68,67])
     LIST=[]
     for n in n_LIST:
-        if P.Nx==31:
-            LIST.append(str('Uphi%i_test.npy'%(n)))
+        if P.Nx==61:
+            LIST.append(str('Uphi%i_Nx60_test.npy'%(n)))
         else:
             print('\n \t \t WRONG Nx \n ')  
     # Uinnitalguess = np.load('Uphi54.npy')
@@ -75,11 +75,11 @@ lambda_list=np.zeros(n_LIST.shape)
 h_list=np.zeros(n_LIST.shape)
 F_list=np.zeros(n_LIST.shape)
 for i in range(np.size(LIST)):
-    print('\n ====================================================== \n \n \t -- currently at %i grad-- \n \n \t loading file ' %(n_LIST[i]),LIST[i])
+    print('\n ====================================================== \n \n \t -- currently at %i grad-- \n \n \t loading file ' %(n_LIST[i]),LIST[i-1])
     if n_LIST[i]==90:
         U = np.load(LIST[i])
-    elif LIST[i]=='Uphi9_test.npy':
-        U = np.load('UPhi9_test.npy')
+    elif LIST[i]=='Uphi70_Nx60_test.npy':
+        U = np.load('Uphi70_Nx60_test.npy')
     else:
         U = np.load(LIST[i-1])
 
@@ -92,7 +92,7 @@ for i in range(np.size(LIST)):
         return TM.F(U,phi=np.pi*n_LIST[i]/180)
     Ufinal=optimize.fsolve(func, U)
     j=0
-    epsilon=10**(-8)
+    epsilon=10**(-9)
     Check=TM.MaxNormOfU(TM.F(Ufinal,phi=np.pi*n_LIST[i]/180))
     while Check>epsilon:
         
@@ -154,15 +154,15 @@ for i in range(np.size(LIST)):
     print('\t | F(zetas) = %.2e \t | F(zetac) = %.2e \n \t | F(us) = %.2e \t | F(uc) = %.2e \n \t | F(vs) = %.2e \t | F(vc) = %.2e \n \t | F(C) = %.2e \t | F(h) = %.2e \n ' %(np.linalg.norm(F_zetas),np.linalg.norm(F_zetac),np.linalg.norm(F_us),np.linalg.norm(F_uc),np.linalg.norm(F_vs),np.linalg.norm(F_vc),np.linalg.norm(F_C),np.linalg.norm(F_h)))
     
     
-    Num_eigenvalues=5
+    #Num_eigenvalues=5
     
-    EIGvals, EIGvecs=sp.linalg.eigs(TM.NumericalJacobian(Ufinal,phi=np.pi*n_LIST[i]/180),Num_eigenvalues,which='LM')
+    #EIGvals, EIGvecs=sp.linalg.eigs(TM.NumericalJacobian(Ufinal,phi=np.pi*n_LIST[i]/180),Num_eigenvalues,which='LM')
     
     h_list[i]=np.max(h)
     F_list[i]=TM.MaxNormOfU(TM.F(Ufinal,phi=np.pi*n_LIST[i]/180))
-    lambda_list[i]=np.max(EIGvals.real)
+    #lambda_list[i]=np.max(EIGvals.real)
     
-    print('with max eigen value %3.2f \n and min water depth %1.2f \n with F = %e  ' %(lambda_list[i],np.max(h), F_list[i]))
+    #print('with max eigen value %3.2f \n and min water depth %1.2f \n with F = %e  ' %(lambda_list[i],np.max(h), F_list[i]))
     
     SAVE_BOOL=True
     if np.min(C)<0 :

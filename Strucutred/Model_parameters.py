@@ -11,7 +11,7 @@ import numpy as np
  
 ''' Model pramters ''' 
 
-Nx = 30+1                # interior points + 1
+Nx = 60+1                # interior points + 1
 Ny = 1+1#int((Nx-1)*1/4)+1
 
 dx = 1/Nx
@@ -49,17 +49,20 @@ phi = 90/180*np.pi #54 [ - ]
 
 
 '''  Sediment  Parameters '''
-k_h=10**2 # [ m^2/s ]
+k_h = 10**2 # [ m^2/s ]
 
 alpha = 0.5*10**-2 # [ kg s m^-4 ]
 
 omega_s=0.015 # [ m/s ]
 
 k_v = 0.1 # [ m**-2/s ]
+
 '''  bed Parameters '''
 rho_s = 2650 # [ kg m^-3 ]
 p = 0.4 # [ - ]
-mu_hat = 1.4*10**-4 # [ m^2/s ]
+
+mu_hat =1.4*10**-4#1.4*10**-4 # [ m^2/s ]
+
 ''' Model pramters ''' 
 
 
@@ -103,7 +106,10 @@ def printparamters():
 def bedprofile(x,y):
 
      #return (1-H2/H1)*x
-    return -0.12*4*x*(x-1)
+    if phi==0:
+        return 1-2*np.abs(0.5-x)
+    else:
+        return -0.12*4*x*(x-1)
 
 def sin(x,y):
     return np.sin(x)
