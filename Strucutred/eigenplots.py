@@ -9,20 +9,37 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as la
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+
  
 import Model_parameters as P
 import Model_functions as F
-from scipy import optimize
+
 
 import Model_Numerical_Jacobian_total_model as TM
 
-import matplotlib.cm as cm
 
- 
-Num_eigenvalues=1
+def power_iteration(A, num_simulations: int):
+    # Ideally choose a random vector
+    # To decrease the chance that our vector
+    # Is orthogonal to the eigenvector
+    b_k = np.random.rand(A.shape[1])
 
-#n_LIST=np.array([90])#,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34,32,30,28,26])#,24,22,20,18,16,14,12,10,8,6,4,2,0])
+    for _ in range(num_simulations):
+        # calculate the matrix-by-vector product Ab
+        b_k1 = np.dot(A, b_k)
+
+        # calculate the norm
+        b_k1_norm = np.linalg.norm(b_k1)
+
+        # re normalize the vector
+        b_k = b_k1 / b_k1_norm
+
+    return b_k
+
+
+
+
+#n_LIST=np.array([90])#np.flip(np.arange(26,90+1,1))
 n_LIST=np.flip(np.arange(26,90+1,1))
 
 LIST=[]
@@ -37,10 +54,23 @@ zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(U)
 
 
 h_list=np.zeros(n_LIST.shape)
-h_LIST=np.zeros((h_list.shape[0],P.reshape(h).mean(0).shape[0]))
+
 u_list=np.zeros(n_LIST.shape)
-u_LIST=np.zeros((h_list.shape[0],P.reshape(h).mean(0).shape[0]))
+
+h_LIST=np.zeros((n_LIST.shape[0],P.Nx+1))
+u_LIST=np.zeros((n_LIST.shape[0],P.Nx+1))
 F_list=np.zeros(n_LIST.shape)
+
+T_list=np.zeros(n_LIST.shape)
+T_list_s=np.zeros(n_LIST.shape)
+T_list_b=np.zeros(n_LIST.shape)
+
+lambda_list=np.zeros(n_LIST.shape)
+
+lambda_list_tilde=np.zeros(n_LIST.shape)
+
+
+lambda_list_tilde2=np.zeros(n_LIST.shape)
 
 for i in range(np.size(LIST)):
     
@@ -122,13 +152,41 @@ for i in range(np.size(LIST)):
     #NJ=TM.NumericalJacobian(U,phi=np.pi*n_LIST[i]/180)
         
     F_list[i]=TM.MaxNormOfU(TM.F(U,phi=np.pi*n_LIST[i]/180))
-
+    
+    
+    
+    # NJ=TM.NumericalJacobian(U,phi=np.pi*90/180,Ar=P.A,H2=P.H2*n_LIST[i]/100)
     #EIGvals, EIGvecs=sp.linalg.eigsh( NJ.toarray(),NJ.shape[0])#,which='LM')
 
     #EIGvals, EIGvecs=sp.linalg.eigs(NJ,k=1,which='LM')
-
-    #lambda_list[i]=np.max(np.real(EIGvals))
     
+    # BOOL_CONDITION=True
+    # j=0
+    # while BOOL_CONDITION:
+    #     eigvec=power_iteration(NJ.toarray(),1000)
+     
+    #     eigval=np.dot(np.transpose(eigvec),(NJ*eigvec))
+        
+    #     lambda_list_tilde2[i]=eigval
+        
+    #     A_shift=NJ.toarray()+eigval*np.identity(NJ.shape[0])
+        
+    #     eigvec_shift=power_iteration(A_shift,1000)
+        
+    #     eigval_shift=np.dot(np.transpose(eigvec_shift),np.matmul(A_shift, eigvec)) 
+        
+    #     lambda_list[i]=eigval-eigval_shift
+        
+    #     lambda_list_tilde[i]=eigval_shift
+        
+    #     if eigval-eigval_shift<0:
+    #         BOOL_CONDITION=False
+    #     j+=1
+    #     print(j)
+    #     if j>100:
+    #         break
+    
+    #lambda_list[i]=sp.linalg.eigs(NJ,k=1,which='LM')[0]
    # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(EIGvecs)
     
    # eigen_vec_maxh=np.max(np.real(h))
@@ -150,42 +208,108 @@ for i in range(np.size(LIST)):
     h_LIST[i,:]=P.H1*P.reshape(h).mean(0)
     
     t=np.arctan(np.max(us/uc))
-    
+
     us=-P.U_const*us
     uc=-P.U_const*uc
     
-    u_list[i]=np.max(us*us/(uc*np.sqrt((us*us)/(uc*uc)+1))+uc/np.sqrt((us*us)/(uc*uc)+1))
+    u_list[i]=np.min(us*us/(uc*np.sqrt((us*us)/(uc*uc)+1))+uc/np.sqrt((us*us)/(uc*uc)+1))
     u_LIST[i,:]=P.reshape(us*us/(uc*np.sqrt((us*us)/(uc*uc)+1))+uc/np.sqrt((us*us)/(uc*uc)+1)).mean(0)
     
     
-#    if TM.MaxNormOfU(TM.F(U,phi=np.pi*n_LIST[i]/180)) <  TM.MaxNormOfU(TM.F(U-la.spsolve(NJ,TM.F(U,phi=np.pi*n_LIST[i]/180)),phi=np.pi*n_LIST[i]/180)):
- #       print('Diverging')
-#    else:
-#        print('Converging')
     
- #   print('with max eigen value %3.2e \n and min water depth %1.2f \n with F = %e  ' %(lambda_list[i]/(P.Nx*P.Ny),np.max(h), F_list[i]))
- #   print('\n eigen values \n \t LM eigen value %3.2e \t h of eigen vec %3.2e \n \t LR eigen value %3.2e \t h of eigen vec %3.2e  ' %(lambda_list[i]/(P.Nx*P.Ny),eigen_vec_maxh, lambda_list_2[i]/(P.Nx*P.Ny),eigen_vec2_maxh))
+    un_scalded_C=P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*C
+    
+    un_scalded_h=P.H1*h
+    
+    suspended_Sediment_transport_x = P.k_h*F.LxD/P.Lx*C*1000
+    
+    suspended_Sediment_transport_y = P.a*P.k_h*P.Lx/P.Ly*F.LyD*un_scalded_C
+   
+    bedload_Sediment_transport_x = P.rho_s*(1-P.p)*P.mu_hat*F.LxD/P.Lx*un_scalded_h*1000
+    
+    bedload_Sediment_transport_y = P.Mutilde*P.Lx/P.Ly*F.LyD*h
+    
+    T_list[i]=np.mean(P.reshape( suspended_Sediment_transport_x + bedload_Sediment_transport_x ).mean(0)[1:-1])
+    T_list_s[i]=np.mean(P.reshape( suspended_Sediment_transport_x ).mean(0)[1:-1])
+    
+    T_list_b[i]=np.mean(P.reshape( bedload_Sediment_transport_x ).mean(0)[1:-1])
+    
+    
+    F_list[i]=TM.MaxNormOfU(TM.F(U,phi=np.pi*n_LIST[i]/180))
+    
+    # if TM.MaxNormOfU(TM.F(U,phi=np.pi*n_LIST[i]/180)) <  TM.MaxNormOfU(TM.F(U-la.spsolve(NJ,TM.F(U,phi=np.pi*n_LIST[i]/180)),phi=np.pi*n_LIST[i]/180)):
+    #     print('Diverging')
+    # else:
+    #     print('Converging')
+    
+    # print('with max eigen value %3.2e \n and min water depth %1.2f \n with F = %e  ' %(lambda_list[i],np.max(h), F_list[i]))
+
 
 
 fig, ax= plt.subplots()
 
+ax.plot(np.flip(np.arange(26,90+1,1)),np.load('eigenvalue_list_vary_phi.npy')/(P.Nx*2),color='slategray',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(26,90+1,1)),np.load('eigenvalue_list_vary_phi.npy')/(P.Nx*4),color='black',marker=".", linewidth=0, linestyle='-')
+#plt.ylim([P.H1,0])
+plt.xlim([0,90])
+ax.set_xlabel('phase difference [degs]')
+ax.set_ylabel('max $\lambda$/($N_xN_y$)' )
+plt.tight_layout()
+
+
+
+fig, ax= plt.subplots()
+
+ax.plot(np.flip(np.arange(26,90+1,1)),F_list,color='slategray',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(26,90+1,1)),np.load('F_list_vary_phi_Ny3.npy'),color='black',marker=".", linewidth=0, linestyle='-')
+#plt.ylim([P.H1,0])
+plt.xlim([0,90])
+ax.set_xlabel('phase difference [degs]')
+ax.set_ylabel('accuracy' )
+ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+plt.tight_layout()
+
+#plt.gca().invert_yaxis()
+# fig, ax= plt.subplots()
+
+# ax.plot(n_LIST,u_list,color='black',marker="", linewidth=2.3, linestyle='-')
+# plt.ylim([0,np.max(u_list)])
+# plt.xlim([0,90])
+# ax.set_xlabel('phase difference [degs]')
+# ax.set_ylabel('maximal water flow [m/s]')
+# plt.tight_layout()
+
+
+
+fig, ax= plt.subplots()
 
 ax.plot(n_LIST,P.H1-h_list,color='black',marker="", linewidth=2.3, linestyle='-')
 plt.ylim([P.H1,0])
 plt.xlim([0,90])
 ax.set_xlabel('phase difference [degs]')
 ax.set_ylabel('minimum water depth [m]' )
-plt.tight_layout()
 
-#plt.gca().invert_yaxis()
-fig, ax= plt.subplots()
-
-ax.plot(n_LIST,u_list,color='black',marker="", linewidth=2.3, linestyle='-')
+ax2=ax.twinx()
+ax2.plot(n_LIST,u_list,color='royalblue',marker="", linewidth=2.3, linestyle='--')
+ax2.tick_params(axis='y', labelcolor='royalblue')
 plt.ylim([0,np.max(u_list)])
 plt.xlim([0,90])
-ax.set_xlabel('phase difference [degs]')
-ax.set_ylabel('maximal water flow [m/s]')
+ax2.set_ylabel('characteristic water flow [m/s]',color='royalblue')
+
+ax3=ax.twinx()
+ax3.tick_params(axis='y', labelcolor='firebrick')
+ax3.spines['right'].set_position(('outward', 60))
+plt.ylim([np.min(T_list),np.max(T_list)])
+ax3.plot(n_LIST,T_list,color='firebrick',marker="", linewidth=2.3, linestyle=':')
+#ax3.plot(n_LIST,T_list_s,color='black',marker="", linewidth=1.7, linestyle=':')
+#ax3.plot(n_LIST,T_list_b,color='firebrick',marker="", linewidth=1.7, linestyle=':')
+ax3.set_ylabel('maximal sediment transport [g/ms]',color='firebrick')
+
 plt.tight_layout()
+
+
+
+
 
 fig, ax= plt.subplots()
 ax.plot(n_LIST,F_list,color='black',marker=".", linewidth=0, linestyle='-')
@@ -196,11 +320,11 @@ plt.tight_layout()
 fig , ax1 = plt.subplots()
 Z=P.H1-h_LIST
 imgh=ax1.imshow(Z, interpolation='None', origin='lower',
-                 cmap=cm.gray, extent=(0, 60, np.max(n_LIST),np.min(n_LIST)),aspect='auto')
+                 cmap='gist_yarg', extent=(0, 60, np.max(n_LIST),np.min(n_LIST)),aspect='auto')
 #plt.set_ylabel([np.max(n_LIST),np.min(n_LIST)])
 levels = np.arange(np.min(Z), np.max(Z), (np.max(Z)-np.min(Z))/10)
 
-CS = ax1.contour(Z, levels, origin='lower', cmap='gist_yarg', linewidths=2, extent=(0, 60, np.max(n_LIST),np.min(n_LIST)))
+CS = ax1.contour(Z, levels, origin='lower', cmap='gray', linewidths=2, extent=(0, 60, np.max(n_LIST),np.min(n_LIST)))
 
 ax1.clabel(CS, levels, inline=1, fmt='%1.2f', fontsize=14)
 ax1.set_xlabel('position in channel [km]')
@@ -211,16 +335,22 @@ CBI = fig.colorbar(imgh, orientation='vertical')
 CBI.ax.set_ylabel('water depth [m]')
 plt.tight_layout()
 
+
+
+
+
+
+
 fig , ax1 = plt.subplots()
 
 Z=u_LIST
 
 imgu=ax1.imshow(Z, interpolation='None', origin='lower',
-                 cmap=cm.gray, extent=(0, 60, np.max(n_LIST),np.min(n_LIST)),aspect='auto')
+                 cmap='gist_yarg', extent=(0, 60, np.max(n_LIST),np.min(n_LIST)),aspect='auto')
 #plt.set_ylabel([np.max(n_LIST),np.min(n_LIST)])
 levels = np.arange(np.min(Z), np.max(Z), (np.max(Z)-np.min(Z))/10)
 
-CS = ax1.contour(Z, levels, origin='lower', cmap='gist_yarg', linewidths=2, extent=(0, 60, np.max(n_LIST),np.min(n_LIST)))
+CS = ax1.contour(Z, levels, origin='lower', cmap='gray', linewidths=2, extent=(0, 60, np.max(n_LIST),np.min(n_LIST)))
 
 ax1.clabel(CS, levels, inline=1, fmt='%1.2f', fontsize=14)
 ax1.set_xlabel('position in channel [km]')

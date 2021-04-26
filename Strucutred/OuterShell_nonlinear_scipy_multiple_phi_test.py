@@ -38,7 +38,7 @@ if BOOL_Total_Model:
     
     #n_LIST=np.array([90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34,32,30,28,26])#,24,22,20,18,16,14,12,10,8,6,4,2,0])
     n_LIST=np.arange(90,180,1)#np.flip()
-    n_LIST=np.array([70,69,68,67])
+    n_LIST=np.array([30])
     LIST=[]
     for n in n_LIST:
         if P.Nx==61:
@@ -76,7 +76,7 @@ h_list=np.zeros(n_LIST.shape)
 F_list=np.zeros(n_LIST.shape)
 for i in range(np.size(LIST)):
     print('\n ====================================================== \n \n \t -- currently at %i grad-- \n \n \t loading file ' %(n_LIST[i]),LIST[i-1])
-    if n_LIST[i]==90:
+    if i==0:
         U = np.load(LIST[i])
     elif LIST[i]=='Uphi70_Nx60_test.npy':
         U = np.load('Uphi70_Nx60_test.npy')

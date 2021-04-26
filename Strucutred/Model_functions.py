@@ -394,10 +394,17 @@ def beta(h):
     return 1/(1-np.exp(-P.lambda_d*(1-h)))
 
 
-def Fzetas(zetas,zetac,us,uc,vs,vc,C,h , phi):
+if P.Ny<2:
+    WHY=0
+else:
+    WHY=1
+
+
+
+def Fzetas(zetas,zetac,us,uc,vs,vc,C,h , phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
     ''' interior '''
     
-    fzetas =-zetas-(1-h)*(LxD*uc+LyD*vc)+uc*(LxD*h)+vc*(LyD*h)
+    fzetas = -zetas-(1-h)*(LxD*uc+WHY*LyD*vc)+uc*(LxD*h)+WHY*vc*(LyD*h)
     
     fzetas = P.Interior*fzetas
     
@@ -413,20 +420,20 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h , phi):
     'x=1' 
 
     fzetas += (P.EastBoundary+P.NECorner+P.SECorner)*(
-                        -zetas + P.Atilde*np.sin(phi)
+                        -zetas + Ar*np.sin(phi)
                         )
 
     ''' South Boundary '''
     'y=0' 
     fzetas += P.SouthBoundary*(
-                               -zetas-(1-h)*(LxD*uc+LyD_f*vc)+uc*(LxD*h)+vc*(LyD_f*h) #-zetas-(1-h)*(LxD*uc)+uc*(LxD*h)
+                               -zetas-(1-h)*(LxD*uc+WHY*LyD_f*vc)+uc*(LxD*h)+WHY*vc*(LyD_f*h) #-zetas-(1-h)*(LxD*uc)+uc*(LxD*h)
                                 )
 
     
     ''' North Boundary ''' 
     'y=1'
     fzetas += P.NorthBoundary*(
-                                -zetas-(1-h)*(LxD*uc+LyD_b*vc)+uc*(LxD*h)+vc*(LyD_b*h) #-zetas-(1-h)*(LxD*uc)+uc*(LxD*h)
+                                -zetas-(1-h)*(LxD*uc+WHY*LyD_b*vc)+uc*(LxD*h)+WHY*vc*(LyD_b*h) #-zetas-(1-h)*(LxD*uc)+uc*(LxD*h)
                                 )
 
 
@@ -436,9 +443,9 @@ def Fzetas(zetas,zetac,us,uc,vs,vc,C,h , phi):
     #fzetas += cornerfix(zetas)
     return fzetas
 
-def Fzetac(zetas,zetac,us,uc,vs,vc,C,h, phi):
+def Fzetac(zetas,zetac,us,uc,vs,vc,C,h, phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
     ''' interior '''
-    fzetac =-zetac+(1-h)*(LxD*us+LyD*vs)-us*(LxD*h)-vs*(LyD*h)
+    fzetac =-zetac+(1-h)*(LxD*us+WHY*LyD*vs)-us*(LxD*h)-WHY*vs*(LyD*h)
     
     fzetac = P.Interior*fzetac
     
@@ -451,18 +458,18 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h, phi):
     'x=1' 
 
     fzetac += (P.EastBoundary+P.NECorner+P.SECorner)*(
-                                -zetac + P.Atilde*np.cos(phi)
+                                -zetac + Ar*np.cos(phi)
                             )
     ''' South Boundary '''
     'y=0' 
     fzetac += P.SouthBoundary*(
-                               -zetac+(1-h)*(LxD*us+LyD_f*vs)-us*(LxD*h)-vs*(LyD_f*h) #-zetac+(1-h)*(LxD*us)-us*(LxD*h)
+                               -zetac+(1-h)*(LxD*us+WHY*LyD_f*vs)-us*(LxD*h)-WHY*vs*(LyD_f*h) #-zetac+(1-h)*(LxD*us)-us*(LxD*h)
                                 )
     
     ''' North Boundary ''' 
     'y=1' 
     fzetac += P.NorthBoundary*(
-                              -zetac+(1-h)*(LxD*us+LyD_b*vs)-us*(LxD*h)-vs*(LyD_b*h)# -zetac+(1-h)*(LxD*us)-us*(LxD*h)
+                              -zetac+(1-h)*(LxD*us+WHY*LyD_b*vs)-us*(LxD*h)-WHY*vs*(LyD_b*h)# -zetac+(1-h)*(LxD*us)-us*(LxD*h)
                                )#LyD_b*zetac
 
     ''' quick corner fix'''
@@ -472,7 +479,7 @@ def Fzetac(zetas,zetac,us,uc,vs,vc,C,h, phi):
     return fzetac
 
 
-def Fus(zetas,zetac,us,uc,vs,vc,C,h, phi):
+def Fus(zetas,zetac,us,uc,vs,vc,C,h, phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
     ''' interior '''
     fus   = -us -np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas
     
@@ -483,13 +490,13 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h, phi):
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
     fus   += (P.WestBoundary+P.NWCorner+P.SWCorner)*(
-                            -us-np.divide(P.r, 1 - 0 )*uc-P.lambda_L**(2)*(LxD_f*zetas)
+                            -us-np.divide(P.r, 1 - h )*uc-P.lambda_L**(2)*(LxD_f*zetas)
                             )
     ''' east boundary ''' 
     'x=1' 
 
     fus += (P.EastBoundary+P.NECorner+P.SECorner)*(
-                             -us-np.divide(P.r, 1 - (1-P.H2/P.H1) )*uc-P.lambda_L**(2)*(LxD_b*zetas)
+                             -us-np.divide(P.r, 1 - h )*uc-P.lambda_L**(2)*(LxD_b*zetas)
                              )
 
          
@@ -502,7 +509,7 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h, phi):
     ''' North Boundary ''' 
     'y=1' 
     fus += P.NorthBoundary*(
-                            -us-np.divide(P.r, 1-h)*uc-P.lambda_L**(2)*LxD*zetas
+                            -us-np.divide(P.r, 1 - h)*uc-P.lambda_L**(2)*LxD*zetas
                             )
     
     
@@ -530,7 +537,7 @@ def Fus(zetas,zetac,us,uc,vs,vc,C,h, phi):
     #                   )
     return fus
          
-def Fuc(zetas,zetac,us,uc,vs,vc,C,h,  phi):
+def Fuc(zetas,zetac,us,uc,vs,vc,C,h, phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
     ''' interior '''
     fuc   = -uc  +np.divide(P.r, 1-h)*us +P.lambda_L**(2)*LxD*zetac
     
@@ -541,14 +548,14 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h,  phi):
     ' KNOWN : zetas = 0 zetac = A  '
     ' UNKOWN : us, uc '
     fuc     +=  (P.WestBoundary+P.NWCorner+P.SWCorner)*(
-                                -uc+np.divide(P.r, 1 - 0)*us+P.lambda_L**(2)*LxD_f*zetac
+                                -uc+np.divide(P.r, 1 - h)*us+P.lambda_L**(2)*LxD_f*zetac
                                 )
                             
     ''' east boundary '''
     'x=1' 
 
     fuc += (P.EastBoundary+P.NECorner+P.SECorner)*(
-                         -uc+np.divide(P.r, 1 - (1-P.H2/P.H1))*us+P.lambda_L**(2)*LxD_b*zetac
+                         -uc+np.divide(P.r, 1 - h)*us+P.lambda_L**(2)*LxD_b*zetac
                         )
 
     ''' South Boundary '''
@@ -582,72 +589,79 @@ def Fuc(zetas,zetac,us,uc,vs,vc,C,h,  phi):
     #fuc += cornerfix(uc)
     return fuc
 
-def Fvs(zetas,zetac,us,uc,vs,vc,C,h,  phi):
-    ''' interior '''
-    fvs   = -vs  -np.divide(P.r, 1 - h)*vc +(P.Lx/P.Ly)**2*-P.lambda_L**(2)*LyD*zetas
+def Fvs(zetas,zetac,us,uc,vs,vc,C,h, phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
+    if WHY!=0:
+        ''' interior '''
+        fvs   = -vs  -np.divide(P.r, 1 - h)*vc +(P.Lx/B)**2*-P.lambda_L**(2)*LyD*zetas
+        
+        fvs = P.Interior*fvs
+        
+        ''' west boundary '''
+        ' KNOWN : zetas = 0 zetac = A  '
+        ' UNKOWN : us, uc '
+        fvs   +=  P.WestBoundary*(-vs -np.divide(P.r, 1-h)*vc +(P.Lx/B)**2*-P.lambda_L**(2)*LyD*zetas)
+                                
+        #                         )
+        # ''' east boundary ''' 
     
-    fvs = P.Interior*fvs
-    
-    ''' west boundary '''
-    ' KNOWN : zetas = 0 zetac = A  '
-    ' UNKOWN : us, uc '
-    fvs   +=  P.WestBoundary*(-vs -np.divide(P.r, 1-0)*vc +(P.Lx/P.Ly)**2*-P.lambda_L**(2)*LyD*zetas)
-                            
-    #                         )
-    # ''' east boundary ''' 
-
-    fvs += P.EastBoundary*(-vs -np.divide(P.r, 1-(1-P.H2/P.H1))*vc +(P.Lx/P.Ly)**2*-P.lambda_L**(2)*LyD*zetas)
-    #                          )
-         
-    ''' South Boundary '''
-    fvs += (P.SouthBoundary+P.SWCorner+P.SECorner)*(-vs+0)
-    
-    ''' North Boundary ''' 
-    fvs += (P.NorthBoundary+P.NWCorner+P.NECorner)*(-vs+0)
-    '''  corner '''
-    
+        fvs += P.EastBoundary*(-vs -np.divide(P.r, 1-h)*vc +(P.Lx/B)**2*-P.lambda_L**(2)*LyD*zetas)
+        #                          )
+             
+        ''' South Boundary '''
+        fvs += (P.SouthBoundary+P.SWCorner+P.SECorner)*(-vs+0)
+        
+        ''' North Boundary ''' 
+        fvs += (P.NorthBoundary+P.NWCorner+P.NECorner)*(-vs+0)
+        '''  corner '''
+    else:
+        fvs=-vs+0
     return fvs
 
-def Fvc(zetas,zetac,us,uc,vs,vc,C,h, phi):
-    ''' interior '''
-    fvc  = -vc   +np.divide(P.r, 1-h)*vs +(P.Lx/P.Ly)**2*P.lambda_L**(2)*LyD*zetac
+def Fvc(zetas,zetac,us,uc,vs,vc,C,h, phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
+    if WHY!=0:
+        ''' interior '''
+        fvc  = -vc   +np.divide(P.r, 1-h)*vs +(P.Lx/B)**2*P.lambda_L**(2)*LyD*zetac
+        
+        fvc  = P.Interior*fvc
+        
     
-    fvc  = P.Interior*fvc
+        ''' west boundary '''
+        ' KNOWN : zetas = 0 zetac = A  '
+        ' UNKOWN : us, uc '
+        fvc   +=  P.WestBoundary*(
+                                 -vc+np.divide(P.r,1-h)*vs+(P.Lx/B)**2*P.lambda_L**(2)*LyD*zetac
+                                 )
+                                
+        #                         )
+        ''' east boundary ''' 
     
-    ''' west boundary '''
-    ' KNOWN : zetas = 0 zetac = A  '
-    ' UNKOWN : us, uc '
-    fvc   +=  P.WestBoundary*(
-                             -vc+np.divide(P.r,1-0)*vs+(P.Lx/P.Ly)**2*P.lambda_L**(2)*LyD*zetac
-                             )
-                            
-    #                         )
-    ''' east boundary ''' 
-
-    fvc += P.EastBoundary*(
-                            -vc+np.divide(P.r,1-(1-P.H2/P.H1))*vs+(P.Lx/P.Ly)**2*P.lambda_L**(2)*LyD*zetac
-                            )
-    #                          )
-         
-    ''' South Boundary '''
-    fvc += (P.SouthBoundary+P.SWCorner+P.SECorner)*(-vc+0)
-    
-    ''' North Boundary ''' 
-    fvc += (P.NorthBoundary+P.NWCorner+P.NECorner)*(-vc+0)
+        fvc += P.EastBoundary*(
+                                -vc+np.divide(P.r,1-h)*vs+(P.Lx/B)**2*P.lambda_L**(2)*LyD*zetac
+                                )
+        #                          )
+             
+        ''' South Boundary '''
+        fvc += (P.SouthBoundary+P.SWCorner+P.SECorner)*(-vc+0)
+        
+        ''' North Boundary ''' 
+        fvc += (P.NorthBoundary+P.NWCorner+P.NECorner)*(-vc+0)
+        
+    else:
+        fvc=-vc+0
     
     return fvc
 
-def FC(zetas,zetac,us,uc,vs,vc,C,h, phi):
+def FC(zetas,zetac,us,uc,vs,vc,C,h, phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
     ''' interior '''
     fC  =           P.a*P.k*(
-                            A_x*C+(P.Lx/P.Ly)**2*A_y*C 
+                            A_x*C+WHY*(P.Lx/B)**2*A_y*C 
                                       # +1*P.lambda_d*(
                                       #             C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )
                                       #             + beta(h)*( LxD*h*LxD*C + (P.Lx/P.Ly)**2*LyD*h*LyD*C)
                                       #             +C*beta(h)*( A_x*h + (P.Lx/P.Ly)**2*A_y*h )
                                       #             )
                             )
-    fC += 0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc))-1*beta(h)*C
+    fC += 0.5*(us*us+uc*uc+WHY*(B/P.Lx)**2*(vs*vs+vc*vc))-1*beta(h)*C
     
     fC = P.Interior*fC
     
@@ -655,20 +669,20 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h, phi):
     ' Lx => Lx_f  '
     ' A_xy => A_xy_xf '
     fC   +=  P.WestBoundary*(
-                             -1*beta(h)*C+0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
+                             -1*beta(h)*C+0.5*(us*us+uc*uc+WHY*(B/P.Lx)**2*(vs*vs+vc*vc)))
                             
     ''' east boundary ''' 
 
     fC   += P.EastBoundary*(
-                             -1*beta(h)*C+0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
+                             -1*beta(h)*C+0.5*(us*us+uc*uc+WHY*(B/P.Lx)**2*(vs*vs+vc*vc)))
          
     ''' South Boundary '''
     fC += (P.SouthBoundary+P.SWCorner+P.SECorner)*(
-                             -1*beta(h)*C+0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
+                             -1*beta(h)*C+0.5*(us*us+uc*uc+WHY*(B/P.Lx)**2*(vs*vs+vc*vc)))
     
     ''' North Boundary ''' 
     fC += (P.NorthBoundary+P.NWCorner+P.NECorner)*(
-                             -1*beta(h)*C+0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
+                             -1*beta(h)*C+0.5*(us*us+uc*uc+WHY*(B/P.Lx)**2*(vs*vs+vc*vc)))
     
     # ''' quick corner fix'''
     
@@ -714,19 +728,17 @@ def FC(zetas,zetac,us,uc,vs,vc,C,h, phi):
     #                   -1*beta(1-P.H2/P.H1)*C+0.5*(us*us+uc*uc+0*(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
     return fC
 
-def Fh(zetas,zetac,us,uc,vs,vc,C,h,  phi):
-    # if N=0 (how it should be) the system is not stable
-    # 
-    N=1#2.7
+def Fh(zetas,zetac,us,uc,vs,vc,C,h, phi:float=P.phi, Ar:float=P.Atilde, H2:float=P.H2, B:float=P.Ly):
+
     
     ''' interior '''
-    fh  = P.Mutilde*( A_x*h +(P.Lx/P.Ly)**2*A_y*h) #-P.Mutilde*A_xy*h
+    fh  = P.Mutilde*( A_x*h +WHY*(P.Lx/B)**2*A_y*h) #-P.Mutilde*A_xy*h
     
     if False:
-        fh  += -P.delta_s*(-1*beta(h)*C+0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))
+        fh  += -P.delta_s*(-1*beta(h)*C+0.5*(us*us+uc*uc+WHY*(B/P.Lx)**2*(vs*vs+vc*vc)))
     else:
         fh  += P.delta_s*P.a*P.k*(
-                             A_x*C+(P.Lx/P.Ly)**2*A_y*C 
+                             A_x*C+WHY*(P.Lx/B)**2*A_y*C 
                             #           + 1*P.lambda_d*(
                             #                       C*( (LxD*(beta(h)))*(LxD*h) + (P.Lx/P.Ly)**2*LyD*beta(h)*LyD*h )
                             #                       + beta(h)*( LxD*h*LxD*C + (P.Lx/P.Ly)**2*LyD*h*LyD*C)
@@ -743,16 +755,17 @@ def Fh(zetas,zetac,us,uc,vs,vc,C,h,  phi):
     #                         )
     ''' east boundary ''' 
 
-    fh += (P.EastBoundary+P.NECorner+P.SECorner)*(-h+1-P.H2/P.H1)
+    fh += (P.EastBoundary+P.NECorner+P.SECorner)*(-h+1-H2/P.H1)
     #                          )
          
+
     ''' South Boundary '''
     fh += P.SouthBoundary*(LyD_f*h)
-
     
+        
     ''' North Boundary ''' 
     fh += P.NorthBoundary*(LyD_b*h)
-
+ 
     
     # ''' quick corner fix'''
     

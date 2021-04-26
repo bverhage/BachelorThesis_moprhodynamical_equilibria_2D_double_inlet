@@ -671,11 +671,11 @@ if BOOL_Total_Model:
     plt.show()
     
 
-    
 
-if True:
+if False:
     
-
+    #plt.imshow(np.real(np.linalg.eig(NJ.toarray())[1]))   
+    zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Ufinal)#np.transpose(np.real(np.linalg.eig(NJ.toarray())[1])[1300]))
     ''' water height '''
     
     fig, ax = plt.subplots()
@@ -812,6 +812,168 @@ if True:
     ax.set_xlabel('position in channel [km]')
     
     plt.tight_layout()
+
+       
+def power_iteration(A, num_simulations: int):
+    # Ideally choose a random vector
+    # To decrease the chance that our vector
+    # Is orthogonal to the eigenvector
+    b_k = np.random.rand(A.shape[1])
+
+    for _ in range(num_simulations):
+        # calculate the matrix-by-vector product Ab
+        b_k1 = np.dot(A, b_k)
+
+        # calculate the norm
+        b_k1_norm = np.linalg.norm(b_k1)
+
+        # re normalize the vector
+        b_k = b_k1 / b_k1_norm
+
+    return b_k
+    
+if True:
+    eigvec=power_iteration(NJ.toarray(),10000)
+    mageig=np.nanmax(P.dx*P.dy*np.transpose(eigvec)*(NJ*eigvec)/(np.transpose(eigvec)*eigvec))
+    eig=np.nanmax(P.dx*P.dy*np.transpose(eigvec)*(NJ*eigvec)/(np.transpose(eigvec)*eigvec))
+    #plt.imshow(np.real(np.linalg.eig(NJ.toarray())[1]))   
+    zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(eigvec)#np.transpose(np.real(np.linalg.eig(NJ.toarray())[1])[1300]))
+    ''' water height '''
+    
+    fig, ax = plt.subplots()
+    
+    corretion_constant=P.A
+    
+    ax.plot(corretion_constant*P.reshape(zetac).mean(0),color='slategray',marker=".", linewidth=0, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(zetas).mean(0),color='royalblue',marker=".", linewidth=0, linestyle='dashed')
+    
+    ax.legend(['$\zeta^{sin}$','$\zeta^{cos}$'])
+    
+    ax.set_xlabel('position in channel [km]')
+    
+    ax.set_ylabel('surface elevation [m]')
+    
+    plt.tight_layout()
+    
+    ''' water flow x-direction '''
+    fig, ax = plt.subplots()
+    
+    corretion_constant=-P.U_const
+    
+    ax.plot(corretion_constant*P.reshape(us).mean(0),color='slategray',marker=".", linewidth=0, linestyle='-')
+    ax.plot(corretion_constant*P.reshape(uc).mean(0),color='royalblue',marker=".", linewidth=0, linestyle='dashed')
+    ax.legend(['$u^{sin}$','$u^{cos}$'])
+    
+    ax.set_xlabel('water depth [m]')
+    ax.set_ylabel('flow velocity [m/s]')
+    
+    plt.tight_layout()
+    
+    ''' water flow y-direction '''
+    
+    fig, ax = plt.subplots()
+    
+    ax.plot(P.U_const*P.Ly/P.Lx*P.reshape(vs).mean(0),color='slategray',marker=".", linewidth=0, linestyle='-')
+    ax.plot(P.U_const*P.Ly/P.Lx*P.reshape(vc).mean(0),color='royalblue',marker=".", linewidth=0, linestyle='dashed')
+    ax.legend(['$v^s$','$v^c$'])
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('transverse flow velocity [m/s]')
+    
+    plt.tight_layout()
+    
+    
+    ''' transport  and transport ''' 
+    # check eenheden
+    
+    un_scalded_C=P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*C
+    
+    un_scalded_h=P.H1*h
+    
+    suspended_Sediment_transport_x = P.k_h*F.LxD/P.Lx*C*1000
+    
+    suspended_Sediment_transport_y = P.a*P.k_h*P.Lx/P.Ly*F.LyD*un_scalded_C
+   
+    bedload_Sediment_transport_x = P.rho_s*(1-P.p)*P.mu_hat*F.LxD/P.Lx*un_scalded_h*1000
+    
+    bedload_Sediment_transport_y = P.Mutilde*P.Lx/P.Ly*F.LyD*h
+
+    
+    fig, ax = plt.subplots()
+
+    
+    ax.plot(P.reshape(suspended_Sediment_transport_x).mean(0)[1:-1],color='firebrick',marker=".", linewidth=0, linestyle='-.')
+    
+    #ax.plot(P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*P.reshape(suspended_Sediment_transport_y).mean(0)[1:-1],'--k')
+    
+    ax.plot(P.reshape(bedload_Sediment_transport_x).mean(0)[1:-1],color='chocolate',marker=".", linewidth=0, linestyle='dashed')
+    
+    ax.plot(P.reshape( suspended_Sediment_transport_x + bedload_Sediment_transport_x ).mean(0)[1:-1],color='black',marker=".", linewidth=0, linestyle='-')
+    #ax.plot(P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*P.reshape(bedload_Sediment_transport_y).mean(0)[1:-1],'--r')
+    
+    ax.legend(['suspended','bedload','total'])
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('sediment transport [g/ms]')
+    
+    
+    
+    # ax2=ax.twinx()
+    # ax2.plot(P.reshape(-P.delta_s*(-1*F.beta(h)*C)-P.delta_s*(0.5*(us*us+uc*uc+(P.Ly/P.Lx)**2*(vs*vs+vc*vc)))).mean(0)[1:-1])
+    # ax2.set_ylabel("sediment concentration [??]",color="darkcyan",fontsize=14)
+    # ax2.plot(P.alpha*P.U_const**2*P.k_v*P.omega_s**-2*P.reshape(C).mean(0),color='darkcyan', linewidth=2.3, linestyle='-')
+    
+    plt.tight_layout()
+
+
+
+    ''' concentration '''
+    fig, ax = plt.subplots()
+    
+    
+    
+    ax.plot(P.reshape(un_scalded_C).mean(0),color='black',marker=".", linewidth=0, linestyle='-')
+    
+    ax.set_xlabel('position in channel [km]')
+    ax.set_ylabel('suspended sediment concentration [kg/m]')
+    plt.tight_layout()
+    
+    
+    
+    ''' bed topology ''' 
+    fig, ax = plt.subplots()
+    
+    ax.plot(P.H1-P.H1*P.reshape(h).mean(0),color='black',marker=".", linewidth=0, linestyle='-')
+    plt.gca().invert_yaxis()
+    #ax.plot(P.A*P.reshape(zetac).mean(0),'k')
+    #ax.plot(P.A*P.reshape(zetas).mean(0),'--k')
+    
+    #ax.legend(['$h$','$\zeta^s$','$\zeta^c$'])
+    
+    ax.set_xlabel(' position in channel [km]')
+    ax.set_ylabel(' water depth [m] ')
+    
+    plt.tight_layout()
+    
+    # ''' error '''
+    
+    # fig, ax = plt.subplots()
+    
+    # ax.plot(P.reshape(F_zetas).mean(0),color='silver',marker=".", linewidth=0, linestyle='-')
+    # ax.plot(P.reshape(F_zetac).mean(0),color='silver',marker=".", linewidth=0, linestyle='-')
+    # ax.plot(P.reshape(F_us).mean(0),color='cornflowerblue',marker=".", linewidth=0, linestyle='-')
+    # ax.plot(P.reshape(F_uc).mean(0),color='cornflowerblue',marker=".", linewidth=0, linestyle='-')
+    # ax.plot(P.reshape(F_C).mean(0),color='peru',marker=".", linewidth=0, linestyle='-')
+    # ax.plot(P.reshape(F_h).mean(0),color='crimson',marker=".",linewidth=0, linestyle='-')
+    # #ax.plot(P.A*P.reshape(zetac).mean(0),'k')
+    # #ax.plot(P.A*P.reshape(zetas).mean(0),'--k')
+    
+    # ax.legend(['$F(\zeta^{\sin})$','$F(\zeta^{\cos})$','$F(u^{\sin})$','$F(u^{\cos})$','$F(\mathcal{C})$','$F(h)$'])
+    
+    # ax.set_ylabel(' distance from equilibrium ')
+    # ax.set_xlabel('position in channel [km]')
+    
+    # plt.tight_layout()
     
     
 if True:
