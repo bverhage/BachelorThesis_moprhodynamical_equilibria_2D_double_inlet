@@ -249,11 +249,11 @@ for i in range(np.size(LIST)):
 fig, ax= plt.subplots()
 
 ax.plot(np.flip(np.arange(26,90+1,1)),np.load('eigenvalue_list_vary_phi.npy')/(P.Nx*2),color='slategray',marker=".", linewidth=0, linestyle='-')
-ax.plot(np.flip(np.arange(26,90+1,1)),np.load('eigenvalue_list_vary_phi.npy')/(P.Nx*4),color='black',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(26,90+1,1)),np.load('eigenvalue_list_vary_phi_Ny3.npy')/(P.Nx*4),color='black',marker=".", linewidth=0, linestyle='-')
 #plt.ylim([P.H1,0])
 plt.xlim([0,90])
 ax.set_xlabel('phase difference [degs]')
-ax.set_ylabel('max $\lambda$/($N_xN_y$)' )
+ax.set_ylabel('max $\lambda$' )
 plt.tight_layout()
 
 
