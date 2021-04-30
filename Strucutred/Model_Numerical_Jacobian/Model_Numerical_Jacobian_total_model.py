@@ -4,7 +4,8 @@ Created on Sun Jan  3 16:16:14 2021
 
 @author: billy Verhage 
 """
-
+import sys
+sys.path.append("..") 
 
 import numpy as np
 import scipy.sparse as sp
@@ -12,8 +13,6 @@ import matplotlib.pyplot as plt
 
 import Model_functions as func
 import Model_parameters as P
-
-import Model_Analytical_Jacobian_total_model as ANALYTICAL
 
 from tqdm import tqdm 
 

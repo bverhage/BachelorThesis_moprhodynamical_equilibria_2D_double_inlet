@@ -26,7 +26,7 @@ BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = True,Fa
 
 
 if BOOL_Total_Model:
-    import Model_Numerical_Jacobian_total_model as TM
+    import Model_Numerical_Jacobian.Model_Numerical_Jacobian_total_model as TM
     #import Model_Numerical_Jacobian_concentration_model as TM_con
     #Uinnitalguess_con = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0))
     
@@ -36,7 +36,7 @@ if BOOL_Total_Model:
     #Uinnitalguess_con=Uinnitalguess_con-DeltaU
     
     from scipy import optimize
-    Uinnitalguess = np.load('Uphi90_Nx60_test.npy')
+    Uinnitalguess = np.load(r'DATA\Equilibria_variation_of_paramters\Varied-phi\Uphi90_Nx60_test.npy')
     # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uinnitalguess)
         
     # zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
@@ -832,7 +832,7 @@ def power_iteration(A, num_simulations: int):
 
     return b_k
     
-if True:
+if False:
     eigvec=power_iteration(NJ.toarray(),10000)
     mageig=np.nanmax(P.dx*P.dy*np.transpose(eigvec)*(NJ*eigvec)/(np.transpose(eigvec)*eigvec))
     eig=np.nanmax(P.dx*P.dy*np.transpose(eigvec)*(NJ*eigvec)/(np.transpose(eigvec)*eigvec))

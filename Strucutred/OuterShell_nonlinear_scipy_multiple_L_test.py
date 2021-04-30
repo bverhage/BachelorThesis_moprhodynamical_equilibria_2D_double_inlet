@@ -8,14 +8,12 @@ Created on Sun Jan  3 16:16:14 2021
 if True:
     print('\t ---------------------------------------------------- ')
     print('\n \t Welcome to the code of BEP 2D FD Morphosdynamic al model \n ')
+
     import numpy as np
-    import scipy.sparse as sp
     import scipy.sparse.linalg as la
     import matplotlib.pyplot as plt
-    import matplotlib.animation as animation
  
     import Model_parameters as P
-    import Model_functions as F
     from scipy import optimize
     
     plt.close("all")
@@ -27,42 +25,27 @@ BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = True,Fa
 
 
 if BOOL_Total_Model:
-    import Model_Numerical_Jacobian_total_model as TM
+    import Model_Numerical_Jacobian.Model_Numerical_Jacobian_total_model as TM
     #import Model_Numerical_Jacobian_concentration_model as TM_con
     #Uinnitalguess_con = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0))
     
     print('\n \t ====Morphodynamical model====\n')
     
-    #DeltaU=la.spsolve(TM_con.NumericalJacobian(Uinnitalguess_con),TM_con.F(Uinnitalguess_con))
-    #Uinnitalguess_con=Uinnitalguess_con-DeltaU
+    path=r'DATA\Equilibria_variation_of_paramters\Varied-B'
     
     #n_LIST=np.array([10,11])#,24,22,20,18,16,14,12,10,8,6,4,2,0])
     n_LIST=np.arange(10,40,1)
     LIST=[]
     for n in n_LIST:
         if P.Nx==61:
-            LIST.append(str('UL%i_Nx60_test_Ny3.npy'%(n)))
+            LIST.append(str(path+r'\UL%i_Nx60_test_Ny3.npy'%(n)))
         else:
             print('\n \t \t WRONG Nx \n ')  
-    # Uinnitalguess = np.load('Uphi54.npy')
-    
-    # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uinnitalguess)
+    if P.Ny!=4:
+        print('\n \t This experiment only works when Ny=3 \n \t please go to Model_pramaters.py and change Ny \n')
         
-    # zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
-    # zetac = np.reshape(np.block([[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        
     
-    # us = np.reshape(np.block([[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))]]),P.ICzeta0.shape)
-    # uc = np.reshape(np.block([[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))]]),P.ICzeta0.shape)
-    
-    # vs = np.reshape(np.block([[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))]]),P.ICzeta0.shape)
-    # vc = np.reshape(np.block([[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))]]),P.ICzeta0.shape)
-    
-    # C = np.reshape(np.block([[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))]]),P.ICzeta0.shape)
-    # h = np.reshape(np.block([[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))]]),P.ICzeta0.shape)
-    #Uinnitalguess = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
-    #Uinnitalguess = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0,P.ICh0))#TM_con.split_animation(Uinnitalguess_con)))
-    
-
 
 ''' Initial condition '''
 
