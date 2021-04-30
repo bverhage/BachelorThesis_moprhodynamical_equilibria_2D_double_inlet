@@ -22,29 +22,35 @@ if True:
     
 P.printparamters()  
 
-BOOL_Total_Model, BOOL_Only_Water_model, BOOL_Only_Concentration_model = True,False,False
 
 
-
-if BOOL_Total_Model:
-    import Model_Numerical_Jacobian_total_model as TM
+if True:
+    import Model_Numerical_Jacobian.Model_Numerical_Jacobian_total_model as TM
     #import Model_Numerical_Jacobian_concentration_model as TM_con
     #Uinnitalguess_con = np.concatenate((P.ICzeta0,P.ICzeta0,P.ICu0,P.ICu0,P.ICv0,P.ICv0,P.ICC0))
     
     print('\n \t ====Morphodynamical model====\n')
     
-    #DeltaU=la.spsolve(TM_con.NumericalJacobian(Uinnitalguess_con),TM_con.F(Uinnitalguess_con))
-    #Uinnitalguess_con=Uinnitalguess_con-DeltaU
+    path=r'DATA\Equilibria_variation_of_paramters\Varied-A'
     
-    #n_LIST=np.array([90,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34,32,30,28,26])#,24,22,20,18,16,14,12,10,8,6,4,2,0])
+
     n_LIST=np.flip(np.arange(0,51,1))#np.flip()
     #n_LIST=np.flip(np.arange(50,101,1))
+
     LIST=[]
     for n in n_LIST:
         if P.Nx==61:
-            LIST.append(str('UA%i_Nx60_test.npy'%(n)))
+            LIST.append(str(path+r'\UA%i_Nx60_test.npy'%(n)))
         else:
             print('\n \t \t WRONG Nx \n ')  
+    if P.Ny>2:
+        print('\n \t This experiment only works when Ny=1 \n \t if Ny>2 this will take very long \n')
+        if input("\t \t Do You Want To Continue? [y/n]") == "y":
+            print('\n \t expanding \n ')
+            EXPAND_BOOL=True
+        else:
+            print('\n \t please go to Model_pramaters.py and change Ny  \n ')
+            EXPAND_BOOL=False
     # Uinnitalguess = np.load('Uphi54.npy')
     
     # zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(Uinnitalguess)
@@ -82,6 +88,74 @@ for i in range(np.size(LIST)):
         U = np.load('Uphi70_Nx60_test.npy')
     else:
         U = np.load(LIST[i-1])
+    if P.Ny>2 and EXPAND_BOOL:
+        zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(U)
+        
+        #zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        zetas = np.reshape(zetas,(3,P.Nx+1))
+        newzetas = zetas[0,:]
+        for j in range(P.Ny-1):
+            newzetas=np.vstack([newzetas,zetas[1,:]])
+        newzetas=np.vstack([newzetas,zetas[2,:]])
+        zetas = np.reshape(newzetas,P.ICzeta0.shape)
+        
+        #zetac = np.reshape(np.block([[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        zetac = np.reshape(zetac,(3,P.Nx+1))
+        newzetac = zetac[0,:]
+        for j in range(P.Ny-1):
+            newzetac=np.vstack([newzetac,zetac[1,:]])
+        newzetac=np.vstack([newzetac,zetac[2,:]])
+        zetac = np.reshape(newzetac,P.ICzeta0.shape)
+        
+        #us = np.reshape(np.block([[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        us = np.reshape(us,(3,P.Nx+1))
+        newus = us[0,:]
+        for j in range(P.Ny-1):
+            newus=np.vstack([newus,us[1,:]])
+        newus=np.vstack([newus,us[2,:]])
+        us = np.reshape(newus,P.ICzeta0.shape)
+        
+        #uc = np.reshape(np.block([[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        uc = np.reshape(uc,(3,P.Nx+1))
+        newuc = uc[0,:]
+        for j in range(P.Ny-1):
+            newuc=np.vstack([newuc,uc[1,:]])
+        newuc=np.vstack([newuc,uc[2,:]])
+        uc = np.reshape(newuc,P.ICzeta0.shape)
+        
+        #vs = np.reshape(np.block([[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        vs = np.reshape(vs,(3,P.Nx+1))
+        newvs = vs[0,:]
+        for j in range(P.Ny-1):
+            newvs=np.vstack([newvs,vs[1,:]])
+        newvs=np.vstack([newvs,vs[2,:]])
+        vs = np.reshape(newvs,P.ICzeta0.shape)
+        
+        #vc = np.reshape(np.block([[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        vc = np.reshape(vc,(3,P.Nx+1))
+        newvc = vc[0,:]
+        for j in range(P.Ny-1):
+            newvc=np.vstack([newvc,vc[1,:]])
+        newvc=np.vstack([newvc,vc[2,:]])
+        vc = np.reshape(newvc,P.ICzeta0.shape)
+        
+        #C = np.reshape(np.block([[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        C = np.reshape(C,(3,P.Nx+1))
+        newC = C[0,:]
+        for j in range(P.Ny-1):
+            newC=np.vstack([newC,C[1,:]])
+        newC=np.vstack([newC,C[2,:]])
+        C = np.reshape(newC,P.ICzeta0.shape)
+        
+        #h = np.reshape(np.block([[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))]]),P.ICzeta0.shape)
+        h = np.reshape(h,(3,P.Nx+1))
+        newh = h[0,:]
+        for j in range(P.Ny-1):
+            newh=np.vstack([newh,h[1,:]])
+        newh=np.vstack([newh,h[2,:]])
+        h = np.reshape(newh,P.ICzeta0.shape)
+        
+        U = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
 
     Fail1=False
     Fail2=False

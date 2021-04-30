@@ -66,79 +66,77 @@ for i in range(np.size(LIST)):
         U = np.load(LIST[i])
     elif LIST[i]=='Uphi70_Nx60_test.npy':
         U = np.load('Uphi70_Nx60_test.npy')
-        if P.Ny>2 and EXPAND_BOOL:
-                zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(U)
-                
-                #zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                zetas = np.reshape(zetas,(3,P.Nx+1))
-                newzetas = zetas[0,:]
-                for j in range(P.Ny-1):
-                    newzetas=np.vstack([newzetas,zetas[1,:]])
-                newzetas=np.vstack([newzetas,zetas[2,:]])
-                zetas = np.reshape(newzetas,P.ICzeta0.shape)
-                
-                #zetac = np.reshape(np.block([[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                zetac = np.reshape(zetac,(3,P.Nx+1))
-                newzetac = zetac[0,:]
-                for j in range(P.Ny-1):
-                    newzetac=np.vstack([newzetac,zetac[1,:]])
-                newzetac=np.vstack([newzetac,zetac[2,:]])
-                zetac = np.reshape(newzetac,P.ICzeta0.shape)
-                
-                #us = np.reshape(np.block([[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                us = np.reshape(us,(3,P.Nx+1))
-                newus = us[0,:]
-                for j in range(P.Ny-1):
-                    newus=np.vstack([newus,us[1,:]])
-                newus=np.vstack([newus,us[2,:]])
-                us = np.reshape(newus,P.ICzeta0.shape)
-                
-                #uc = np.reshape(np.block([[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                uc = np.reshape(uc,(3,P.Nx+1))
-                newuc = uc[0,:]
-                for j in range(P.Ny-1):
-                    newuc=np.vstack([newuc,uc[1,:]])
-                newuc=np.vstack([newuc,uc[2,:]])
-                uc = np.reshape(newuc,P.ICzeta0.shape)
-                
-                #vs = np.reshape(np.block([[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                vs = np.reshape(vs,(3,P.Nx+1))
-                newvs = vs[0,:]
-                for j in range(P.Ny-1):
-                    newvs=np.vstack([newvs,vs[1,:]])
-                newvs=np.vstack([newvs,vs[2,:]])
-                vs = np.reshape(newvs,P.ICzeta0.shape)
-                
-                #vc = np.reshape(np.block([[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                vc = np.reshape(vc,(3,P.Nx+1))
-                newvc = vc[0,:]
-                for j in range(P.Ny-1):
-                    newvc=np.vstack([newvc,vc[1,:]])
-                newvc=np.vstack([newvc,vc[2,:]])
-                vc = np.reshape(newvc,P.ICzeta0.shape)
-                
-                #C = np.reshape(np.block([[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                C = np.reshape(C,(3,P.Nx+1))
-                newC = C[0,:]
-                for j in range(P.Ny-1):
-                    newC=np.vstack([newC,C[1,:]])
-                newC=np.vstack([newC,C[2,:]])
-                C = np.reshape(newC,P.ICzeta0.shape)
-                
-                #h = np.reshape(np.block([[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))]]),P.ICzeta0.shape)
-                h = np.reshape(h,(3,P.Nx+1))
-                newh = h[0,:]
-                for j in range(P.Ny-1):
-                    newh=np.vstack([newh,h[1,:]])
-                newh=np.vstack([newh,h[2,:]])
-                h = np.reshape(newh,P.ICzeta0.shape)
-                
-                U = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
     else:
         U = np.load(LIST[i-1])
 
-    Fail1=False
-    Fail2=False
+    if P.Ny>2 and EXPAND_BOOL:
+            zetas,zetac,us,uc,vs,vc,C,h=TM.split_animation(U)
+            
+            #zetas = np.reshape(np.block([[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))],[np.reshape(zetas,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            zetas = np.reshape(zetas,(3,P.Nx+1))
+            newzetas = zetas[0,:]
+            for j in range(P.Ny-1):
+                newzetas=np.vstack([newzetas,zetas[1,:]])
+            newzetas=np.vstack([newzetas,zetas[2,:]])
+            zetas = np.reshape(newzetas,P.ICzeta0.shape)
+            
+            #zetac = np.reshape(np.block([[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))],[np.reshape(zetac,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            zetac = np.reshape(zetac,(3,P.Nx+1))
+            newzetac = zetac[0,:]
+            for j in range(P.Ny-1):
+                newzetac=np.vstack([newzetac,zetac[1,:]])
+            newzetac=np.vstack([newzetac,zetac[2,:]])
+            zetac = np.reshape(newzetac,P.ICzeta0.shape)
+            
+            #us = np.reshape(np.block([[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))],[np.reshape(us,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            us = np.reshape(us,(3,P.Nx+1))
+            newus = us[0,:]
+            for j in range(P.Ny-1):
+                newus=np.vstack([newus,us[1,:]])
+            newus=np.vstack([newus,us[2,:]])
+            us = np.reshape(newus,P.ICzeta0.shape)
+            
+            #uc = np.reshape(np.block([[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))],[np.reshape(uc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            uc = np.reshape(uc,(3,P.Nx+1))
+            newuc = uc[0,:]
+            for j in range(P.Ny-1):
+                newuc=np.vstack([newuc,uc[1,:]])
+            newuc=np.vstack([newuc,uc[2,:]])
+            uc = np.reshape(newuc,P.ICzeta0.shape)
+            
+            #vs = np.reshape(np.block([[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))],[np.reshape(vs,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            vs = np.reshape(vs,(3,P.Nx+1))
+            newvs = vs[0,:]
+            for j in range(P.Ny-1):
+                newvs=np.vstack([newvs,vs[1,:]])
+            newvs=np.vstack([newvs,vs[2,:]])
+            vs = np.reshape(newvs,P.ICzeta0.shape)
+            
+            #vc = np.reshape(np.block([[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))],[np.reshape(vc,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            vc = np.reshape(vc,(3,P.Nx+1))
+            newvc = vc[0,:]
+            for j in range(P.Ny-1):
+                newvc=np.vstack([newvc,vc[1,:]])
+            newvc=np.vstack([newvc,vc[2,:]])
+            vc = np.reshape(newvc,P.ICzeta0.shape)
+            
+            #C = np.reshape(np.block([[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))],[np.reshape(C,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            C = np.reshape(C,(3,P.Nx+1))
+            newC = C[0,:]
+            for j in range(P.Ny-1):
+                newC=np.vstack([newC,C[1,:]])
+            newC=np.vstack([newC,C[2,:]])
+            C = np.reshape(newC,P.ICzeta0.shape)
+            
+            #h = np.reshape(np.block([[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))],[np.reshape(h,(3,P.Nx+1))]]),P.ICzeta0.shape)
+            h = np.reshape(h,(3,P.Nx+1))
+            newh = h[0,:]
+            for j in range(P.Ny-1):
+                newh=np.vstack([newh,h[1,:]])
+            newh=np.vstack([newh,h[2,:]])
+            h = np.reshape(newh,P.ICzeta0.shape)
+            
+            U = np.concatenate((zetas,zetac,us,uc,vs,vc,C,h))
     
     
     #Ufinal=optimize.fsolve(TM.F, Uinnitalguess-la.spsolve(TM.NumericalJacobian(Uinnitalguess),TM.F(Uinnitalguess)))
