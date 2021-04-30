@@ -15,7 +15,7 @@ import Model_parameters as P
 import Model_functions as F
 
 
-import Model_Numerical_Jacobian_total_model as TM
+import Model_Numerical_Jacobian.Model_Numerical_Jacobian_total_model as TM
 
 
 def power_iteration(A, num_simulations: int):
@@ -37,7 +37,7 @@ def power_iteration(A, num_simulations: int):
     return b_k
 
 
-
+path=r'DATA\Equilibria_variation_of_paramters\Varied-phi'
 
 #n_LIST=np.array([90])#np.flip(np.arange(26,90+1,1))
 n_LIST=np.flip(np.arange(26,90+1,1))
@@ -45,7 +45,7 @@ n_LIST=np.flip(np.arange(26,90+1,1))
 LIST=[]
 for n in n_LIST:
     if P.Nx==61:
-        LIST.append(str('Uphi%i_Nx60_test.npy'%(n)))
+        LIST.append(str(path+r'\Uphi%i_Nx60_test.npy'%(n)))
     else:
         print('\n \t \t WRONG Nx \n ')
     
@@ -248,8 +248,8 @@ for i in range(np.size(LIST)):
 
 fig, ax= plt.subplots()
 
-ax.plot(np.flip(np.arange(26,90+1,1)),np.load('eigenvalue_list_vary_phi.npy')/(P.Nx*2),color='slategray',marker=".", linewidth=0, linestyle='-')
-ax.plot(np.flip(np.arange(26,90+1,1)),np.load('eigenvalue_list_vary_phi_Ny3.npy')/(P.Nx*4),color='black',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(26,90+1,1)),np.load(r'DATA\variables_for_plots\eigenvalue_list_vary_phi.npy')/(P.Nx*2),color='slategray',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(26,90+1,1)),np.load(r'DATA\variables_for_plots\eigenvalue_list_vary_phi_Ny3.npy')/(P.Nx*4),color='black',marker=".", linewidth=0, linestyle='-')
 #plt.ylim([P.H1,0])
 plt.xlim([0,90])
 ax.set_xlabel('phase difference [degs]')
@@ -261,7 +261,7 @@ plt.tight_layout()
 fig, ax= plt.subplots()
 
 ax.plot(np.flip(np.arange(26,90+1,1)),F_list,color='slategray',marker=".", linewidth=0, linestyle='-')
-ax.plot(np.flip(np.arange(26,90+1,1)),np.load('F_list_vary_phi_Ny3.npy'),color='black',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(26,90+1,1)),np.load(r'DATA\variables_for_plots\F_list_vary_phi_Ny3.npy'),color='black',marker=".", linewidth=0, linestyle='-')
 #plt.ylim([P.H1,0])
 plt.xlim([0,90])
 ax.set_xlabel('phase difference [degs]')

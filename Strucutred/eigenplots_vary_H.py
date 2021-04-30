@@ -15,7 +15,7 @@ import Model_parameters as P
 import Model_functions as F
 from scipy import optimize
 
-import Model_Numerical_Jacobian_total_model as TM
+import Model_Numerical_Jacobian.Model_Numerical_Jacobian_total_model as TM
 
 import matplotlib.cm as cm
 
@@ -24,11 +24,11 @@ Num_eigenvalues=1
 
 #n_LIST=np.array([89,102])#,88,86,84,82,80,78,76,74,72,70,68,66,64,62,60,58,56,54,52,50,48,46,44,42,40,38,36,34,32,30,28,26])#,24,22,20,18,16,14,12,10,8,6,4,2,0])
 n_LIST= np.flip(np.arange(47,200,1))#np.flip(np.arange(47,200,1))
-
+path=r'DATA\Equilibria_variation_of_paramters\Varied-H'
 LIST=[]
 for n in n_LIST:
     if P.Nx==61:
-        LIST.append(str('UH%i_Nx60_test_1.npy'%(n)))
+        LIST.append(str(path+r'\UH%i_Nx60_test_1.npy'%(n)))
     else:
         print('\n \t \t WRONG Nx \n ')
     
@@ -277,8 +277,8 @@ for i in range(np.size(LIST)):
     
 fig, ax= plt.subplots()
 
-ax.plot(np.flip(np.arange(47,200,1))/100,np.load('eigenvalue_list_vary_h.npy')/(P.Nx*2),color='slategray',marker=".", linewidth=0, linestyle='-')
-ax.plot(np.flip(np.arange(47,200,1))/100,np.load('eigenvalue_list_vary_h_Ny3.npy')/(P.Nx*4),color='black',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(47,200,1))/100,np.load(r'DATA\variables_for_plots\eigenvalue_list_vary_h.npy')/(P.Nx*2),color='slategray',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(47,200,1))/100,np.load(r'DATA\variables_for_plots\eigenvalue_list_vary_h_Ny3.npy')/(P.Nx*4),color='black',marker=".", linewidth=0, linestyle='-')
 plt.xlim([np.min(np.flip(np.arange(47,200,1)))/100,np.max(np.flip(np.arange(47,200,1)))/100])
 ax.set_xlabel('inlet depth ratio ')
 ax.set_ylabel('max $\lambda$' )
@@ -286,8 +286,8 @@ plt.tight_layout()
 
 fig, ax= plt.subplots()
 
-ax.plot(np.flip(np.arange(47,200,1))/100,np.load('F_list_vary_H_Ny1.npy'),color='slategray',marker=".", linewidth=0, linestyle='-')
-ax.plot(np.flip(np.arange(47,200,1))/100,np.load('F_list_vary_H_Ny3.npy'),color='black',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(47,200,1))/100,np.load(r'DATA\variables_for_plots\F_list_vary_H_Ny1.npy'),color='slategray',marker=".", linewidth=0, linestyle='-')
+ax.plot(np.flip(np.arange(47,200,1))/100,np.load(r'DATA\variables_for_plots\F_list_vary_H_Ny3.npy'),color='black',marker=".", linewidth=0, linestyle='-')
 plt.xlim([np.min(np.flip(np.arange(47,200,1)))/100,np.max(np.flip(np.arange(47,200,1)))/100])
 ax.set_xlabel('inlet depth ratio ')
 ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
