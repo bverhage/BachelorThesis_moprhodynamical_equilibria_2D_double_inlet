@@ -13,7 +13,8 @@ The structure of this repository:
 
 Heads up I am very dyslectic and I do not know the existence of spell checkers on code editors.   
 
-If anything is unclear feel free to message me about it and also feel free to use or improve my code.
+If anybody is intrested in my code please send me a message and I will create meaninfull comments. 
+So is anything is unclear feel free to message me about it and also feel free to use or improve my code.
 
 With Kind Regards,
 Billy Verhage
